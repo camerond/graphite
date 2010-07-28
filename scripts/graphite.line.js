@@ -3,12 +3,12 @@ function Graphite() {
   var data = arguments[1];
   var labels = arguments[2];
   var defaults = {
-    bezier_curve: 10,
     draw_grid_x: true,
     draw_grid_y: true,
     draw_legends: true,
     width: graph.canvas.clientWidth,
     height: graph.canvas.clientHeight,
+    max_y_value: data.max(),
     gutter_x: 20,
     gutter_y: 20,
     color: Raphael.getColor(),
@@ -41,25 +41,26 @@ function Graphite() {
       font: "normal 10px Helvetica, Arial, sans-serif"
     },
     line: {
+      bezier_curve: 10,
+      stroke: this.color,
       stroke_width: 4,
       bg_opacity: .3
     }
   }
   defaults.point.color = defaults.color;
   var opts = $.extend(true, defaults, arguments[3] || {});
-  
   var lines = [];
 
   this.path = function(data, graph) {
     var path = "", x = opts.gutter_x || 0, y = 0;
     var increment_x = (opts.width / (data.length - 1)) - (x * 2) / (data.length - 1);
-    var increment_y = (opts.height - opts.gutter_y * 2) / data.max();
+    var increment_y = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
     var section;
     var tags = [];
     for (var i = 0, length = data.length; i < length; i++) {
       if (i) {
         x += increment_x;
-        path += "S" + [x - opts.bezier_curve, (y = opts.height - (data[i] * increment_y) +
+        path += "S" + [x - opts.line.bezier_curve, (y = opts.height - (data[i] * increment_y) +
                 (opts.line.stroke_width / 2) - opts.gutter_y), x, y];
       } else {
         path += "M" + [x, (y = opts.height - (data[i] * increment_y) + (opts.line.stroke_width / 2) - opts.gutter_y)];
@@ -78,7 +79,7 @@ function Graphite() {
     c.attr({path: values, stroke: opts.color});
     bg.attr({path: bg_values, fill: opts.color});
     if (opts.draw_grid_x) {
-      this.grid(0, data.max(), "#ccc");
+      this.grid(0, opts.max_y_value, "#ccc");
     }
     if (opts.draw_grid_y) {
       this.grid(data.length - 1, 0, "#ccc");
@@ -87,7 +88,7 @@ function Graphite() {
 
   this.labels = function() {
     var increment_x = (opts.width - (opts.gutter_x * 2)) / (data.length - 1);
-    var increment_y = (opts.height - (opts.gutter_y * 2)) / data.max();
+    var increment_y = (opts.height - (opts.gutter_y * 2)) / opts.max_y_value;
     if(opts.labels_x.draw) {
       $.each(labels, function(i, label) {
         var x = i * increment_x + opts.gutter_x + opts.labels_x.adj_x;
@@ -100,7 +101,7 @@ function Graphite() {
       });
     }
     if(opts.labels_y.draw) {
-      for (var i = 0; i <= data.max(); i++) {
+      for (var i = 0; i <= opts.max_y_value; i++) {
         graph.text(opts.gutter_x, opts.height - (i * increment_y + opts.gutter_y), i).attr({"text-anchor": "end"});
       }
     }

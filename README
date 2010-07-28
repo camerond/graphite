@@ -1,0 +1,8 @@
+# Todo
+
+- callback to redraw points with custom graphics
+- callback to draw custom lines:
+  - average line
+  - tag for avg line
+  - hi/lo bounds area
+- mouseover

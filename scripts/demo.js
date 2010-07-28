@@ -13,6 +13,7 @@ $(function() {
     bezier_curve: 0,
     gutter_x: 4,
     draw_grid_x: false,
+    max_y_value: 100,
     labels_y: {
       draw: false
     },
@@ -24,6 +25,7 @@ $(function() {
       color: "#333"
     },
     line: {
+      bezier_curve: 0,
       stroke_width: 2,
       bg_opacity: 0
     }
