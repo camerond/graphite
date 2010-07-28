@@ -1,11 +1,70 @@
+$(function() {
+  var $container = $("#graph");
+  var graph = Raphael("graph", $container.width(), $container.height());
+  graph.stroke_width = 3;
+  var $table = $("table");
+  var data = [], points = [], labels = [];
+  $table.find("tr").each(function(i) {
+    if ($("td:last", this).length) {
+      data.push(parseInt($("td:last", this).text(), 10));
+      labels.push($("td:first", this).text());
+    }
+  });
+  var graphite = new Graphite(graph, data, labels);
+  graphite.draw();
+  graphite.labels();
+
+  $("form").submit(function() {
+    var tr = $("<tr />");
+    var $input = $("input", this);
+    var value = parseInt($input.val(), 10);
+    if (isNaN(value)) {
+      $("form p").text("Enter a number");
+      return false;
+    }
+    if ((value + "").length != $input.val().length) {
+      $("form p").text("Invalid character(s) - integers only");
+      return false;
+    }
+    if (value < 0) {
+      $("form p").text("Must be a positive number");
+      return false;
+    }
+    data.push(parseInt($input.val(), 10));
+    labels.push("New point");
+    $("<td />").text("New point").appendTo(tr);
+    $("<td />").text(data[data.length - 1]).appendTo(tr);
+    tr.appendTo($table);
+    $input.val("");
+    graph.clear();
+    graphite.data = data;
+    graphite.draw();
+    graphite.labels();
+    return false;
+  });
+});
+
+Array.prototype.max = function() {
+  var max = this[0];
+  var len = this.length;
+  for (var i = 1; i < len; i++) if (this[i] > max) max = this[i];
+  return max;
+}
+
+Array.prototype.min = function() {
+  var min = this[0];
+  var len = this.length;
+  for (var i = 1; i < len; i++) if (this[i] < min) min = this[i];
+  return min;
+}
+
 function Graphite() {
   var graph = arguments[0];
   var data = arguments[1];
   var labels = arguments[2];
   var defaults = {
     bezier_curve: 10,
-    draw_grid_x: true,
-    draw_grid_y: true,
+    draw_grid: true,
     draw_legends: true,
     width: graph.canvas.clientWidth,
     height: graph.canvas.clientHeight,
@@ -13,7 +72,7 @@ function Graphite() {
     gutter_y: 20,
     color: Raphael.getColor(),
     point: {
-      radius: 4
+      radius: 5
     },
     tooltip: {
       width: 60,
@@ -21,34 +80,15 @@ function Graphite() {
       radius: 3,
       fill: "#ffffff",
       stroke: "#666666",
-      duration: 200,
-      style: "popup"
+      duration: 200
     },
     tooltip_text: {
-      font: "normal 10px Helvetica, Arial, sans-serif",
+      font: "normal 12px Arial, Helvetica, sans-serif",
       color: "#333333"
-    },
-    labels_x: {
-      draw: true,
-      font: "normal 10px Helvetica, Arial, sans-serif",
-      color: "#333333",
-      align: "center",
-      adj_x: 0,
-      adj_y: 0
-    },
-    labels_y: {
-      draw: true,
-      font: "normal 10px Helvetica, Arial, sans-serif"
-    },
-    line: {
-      stroke_width: 4,
-      bg_opacity: .3
     }
   }
   defaults.point.color = defaults.color;
-  var opts = $.extend(true, defaults, arguments[3] || {});
-  
-  var lines = [];
+  var opts = $.extend(defaults, arguments[3] || {});
 
   this.path = function(data, graph) {
     var path = "", x = opts.gutter_x || 0, y = 0;
@@ -60,9 +100,9 @@ function Graphite() {
       if (i) {
         x += increment_x;
         path += "S" + [x - opts.bezier_curve, (y = opts.height - (data[i] * increment_y) +
-                (opts.line.stroke_width / 2) - opts.gutter_y), x, y];
+                (graph.stroke_width / 2) - opts.gutter_y), x, y];
       } else {
-        path += "M" + [x, (y = opts.height - (data[i] * increment_y) + (opts.line.stroke_width / 2) - opts.gutter_y)];
+        path += "M" + [x, (y = opts.height - (data[i] * increment_y) + (graph.stroke_width / 2) - opts.gutter_y)];
       }
       tags[i] = this.point(x, y, labels[i]);
     }
@@ -70,39 +110,28 @@ function Graphite() {
   }
 
   this.draw = function() {
-    var c = graph.path("M0,0").attr({fill: "none", "stroke-width": opts.line.stroke_width}),
-    bg = graph.path("M0,0").attr({stroke: "none", opacity: opts.line.bg_opacity});
+    var c = graph.path("M0,0").attr({fill: "none", "stroke-width": graph.stroke_width}),
+    bg = graph.path("M0,0").attr({stroke: "none", opacity: .3});
     var values = this.path(data, graph);
     var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +
                     " " + opts.gutter_x + "," + (opts.height - opts.gutter_y) + "z";
     c.attr({path: values, stroke: opts.color});
     bg.attr({path: bg_values, fill: opts.color});
-    if (opts.draw_grid_x) {
-      this.grid(0, data.max(), "#ccc");
+    if (opts.draw_grid) {
+      this.grid(data.length - 1, data.max(), "#ccc");
     }
-    if (opts.draw_grid_y) {
-      this.grid(data.length - 1, 0, "#ccc");
-    }
+    var increment_x = opts.width / (data.length - 1);
+    var increment_y = opts.height / data.max();
   }
 
   this.labels = function() {
     var increment_x = (opts.width - (opts.gutter_x * 2)) / (data.length - 1);
     var increment_y = (opts.height - (opts.gutter_y * 2)) / data.max();
-    if(opts.labels_x.draw) {
-      $.each(labels, function(i, label) {
-        var x = i * increment_x + opts.gutter_x + opts.labels_x.adj_x;
-        var y = opts.height - opts.gutter_y / 2 + opts.labels_x.adj_y;
-        graph.text(x, y, label).attr({
-          "text-anchor": opts.labels_x.text_anchor, 
-          font: opts.labels_x.font, 
-          fill: opts.labels_x.color
-        });
-      });
-    }
-    if(opts.labels_y.draw) {
-      for (var i = 0; i <= data.max(); i++) {
-        graph.text(opts.gutter_x, opts.height - (i * increment_y + opts.gutter_y), i).attr({"text-anchor": "end"});
-      }
+    $.each(labels, function(i, label) {
+      graph.text(i * increment_x + opts.gutter_x, opts.height - opts.gutter_y / 2, label).attr({"text-anchor": "center"});
+    });
+    for (var i = 0; i <= data.max(); i++) {
+      graph.text(opts.gutter_x - 2, opts.height - (i * increment_y + opts.gutter_y), i).attr({"text-anchor": "end"});
     }
   }
 
