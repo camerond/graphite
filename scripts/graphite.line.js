@@ -1,8 +1,7 @@
 function Graphite() {
   var graphite = this;
-  var graph = arguments[0];
-  var data = arguments[1];
-  var labels = arguments[2];
+  var graph = initGraph(arguments[0]);
+  var data = parseData(arguments[1]);
   var defaults = {
     draw_grid_x: true,
     draw_grid_y: true,
@@ -49,7 +48,7 @@ function Graphite() {
     }
   }
   defaults.point.color = defaults.color;
-  var opts = $.extend(true, defaults, arguments[3] || {});
+  var opts = $.extend(true, defaults, arguments[2] || {});
 
   this.trigger = {
     beforePoint : {},
@@ -67,6 +66,26 @@ function Graphite() {
       return fire(obj);
     }
     return obj;
+  }
+
+  function initGraph($obj) {
+    return Raphael("graph", $obj.width(), $obj.height());
+  }
+
+  function parseData($obj) {
+
+    var data = [];
+    $obj.find("tbody tr").each(function(i) {
+      var $tr = $(this);
+      for(var i=0; i<$tr.find("td").size(); i++) {
+        if(!data[i]) { data[i] = [] };
+        data[i][$tr.index()] = $tr.find("td:eq("+i+")").text();
+      }
+    });
+    this.labels = data.shift();
+
+    return data;
+
   }
 
   this.svgPath = function(data_points) {

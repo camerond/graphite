@@ -1,17 +1,5 @@
 $(function() {
-  var $container = $("#graph");
-  var graph = Raphael("graph", $container.width(), $container.height());
-  var $table = $("table");
-  var data = [], labels = [];
-  $table.find("tbody tr").each(function(i) {
-    var $tr = $(this);
-    for(var i=0; i<$tr.find("td").size(); i++) {
-      if(!data[i]) { data[i] = [] };
-      data[i][$tr.index()] = $tr.find("td:eq("+i+")").text();
-    }
-  });
-  labels = data.shift();
-  var graphite = new Graphite(graph, data, labels, {
+  var graphite = new Graphite($("#graph"), $("table"), {
     bezier_curve: 0,
     gutter_x: 4,
     draw_grid_x: false,
@@ -46,8 +34,7 @@ $(function() {
     }
     return i;
   }
-  
-  
+
   graphite.draw();
   graphite.labels();
 
