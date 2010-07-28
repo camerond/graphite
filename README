@@ -4,5 +4,6 @@
   - average line
   - tag for avg line
   - hi/lo bounds area
-- mouseover
+- mouseover callback
+- re-implement tooltip in jQuery?
 - JSON parsing

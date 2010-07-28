@@ -1,14 +1,10 @@
 function Graphite() {
   var graphite = this;
-  var graph = initGraph(arguments[0]);
-  var data = parseData(arguments[1]);
   var defaults = {
     draw_grid_x: true,
     draw_grid_y: true,
     draw_legends: true,
-    width: graph.canvas.clientWidth,
-    height: graph.canvas.clientHeight,
-    max_y_value: data.max(),
+    max_y_value: 100,
     gutter_x: 20,
     gutter_y: 20,
     color: Raphael.getColor(),
@@ -17,22 +13,8 @@ function Graphite() {
     },
     path: {
       bezier_curve: 10,
-      stroke: this.color,
       stroke_width: 4,
       fill_opacity: .3
-    },
-    tooltip: {
-      width: 60,
-      height: 25,
-      radius: 3,
-      fill: "#ffffff",
-      stroke: "#666666",
-      duration: 200,
-      style: "popup"
-    },
-    tooltip_text: {
-      font: "normal 10px Helvetica, Arial, sans-serif",
-      color: "#333333"
     },
     labels_x: {
       draw: true,
@@ -47,20 +29,19 @@ function Graphite() {
       font: "normal 10px Helvetica, Arial, sans-serif"
     }
   }
-  defaults.point.color = defaults.color;
   var opts = $.extend(true, defaults, arguments[2] || {});
+
+  var graph = initGraph(arguments[0]);
+  var labels = [];
+  var data = parseData(arguments[1]);
 
   this.trigger = {
     beforePoint : {},
-    beforePath : {}
+    beforePath : {},
+    mouseoverPoint : {}
   };
   
-  function fireTrigger(name, index, data, attrs) {
-    var obj = {
-      index: index,
-      values: data,
-      attrs: attrs
-    }
+  function fireTrigger(name, obj) {
     var fire = graphite.trigger[name];
     if(typeof fire == 'function') {
       return fire(obj);
@@ -69,71 +50,104 @@ function Graphite() {
   }
 
   function initGraph($obj) {
-    return Raphael("graph", $obj.width(), $obj.height());
+    var graph = Raphael("graph", $obj.width(), $obj.height());
+    opts.width = graph.canvas.clientWidth;
+    opts.height = graph.canvas.clientHeight;
+    return graph;
   }
 
   function parseData($obj) {
 
-    var data = [];
-    $obj.find("tbody tr").each(function(i) {
+    var paths = [];
+    $obj.find("tr").each(function(i) {
       var $tr = $(this);
-      for(var i=0; i<$tr.find("td").size(); i++) {
-        if(!data[i]) { data[i] = [] };
-        data[i][$tr.index()] = $tr.find("td:eq("+i+")").text();
+      if($tr.parent()[0].tagName == 'THEAD') {
+        $tr.children().each(function(j) {
+          if(j===0) { return; }
+          newPath = {
+            index: j-1,
+            label: $(this).text(),
+            points: [],
+            attrs: $.extend({}, opts.path)
+          }
+          paths[j] = $.extend({}, newPath);
+        });
+      } else {
+        $tr.children().each(function(j) {
+          if(j===0) {
+            labels.push($(this).text());
+          } else {
+            var newPoint = {
+              index: i,
+              amount: parseFloat($(this).text(), 10),
+              attrs: $.extend({}, opts.point)
+            };
+            paths[j].points.push($.extend({}, newPoint));
+          }
+        });
       }
     });
-    this.labels = data.shift();
+    paths.shift();
+    opts.max_y_value = findMax();
+    return paths;
 
-    return data;
-
+    function findMax() {
+      var maxValue = 0;
+      $.each(paths, function() {
+        $.each(this.points, function() {
+          if (this.amount > maxValue) {
+            maxValue = this.amount;
+          }
+        });
+      });
+      return maxValue;
+    }
   }
 
-  this.svgPath = function(data_points) {
-    var path = "";
+  this.svgPath = function(points) {
+    var values = "";
     var x = opts.gutter_x || 0, y = 0;
-    var n = data_points.length;
+    var n = points.length;
     var increment_x = (opts.width / (n - 1)) - (x * 2) / (n - 1);
     var increment_y = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
     for (var i = 0; i < n; i++) {
+      var point = points[i];
+      point.y = opts.height - (point.amount * increment_y) + (opts.path.stroke_width / 2) - opts.gutter_y;
       if (i) {
         x += increment_x;
-        path += "S" + [x - opts.path.bezier_curve, (y = opts.height - (data_points[i] * increment_y) +
-                (opts.path.stroke_width / 2) - opts.gutter_y), x, y];
+        values += "S" + [x - opts.path.bezier_curve, (y = point.y), x, y];
       } else {
-        path += "M" + [x, (y = opts.height - (data_points[i] * increment_y) + (opts.path.stroke_width / 2) - opts.gutter_y)];
+        values += "M" + [x, (y = point.y)];
       }
-      var data = {
-        x: x,
-        y: y
-      };
-      var point = fireTrigger('beforePoint', i, data, $.extend(opts.point));
-      this.svgPoint(point, labels[i]);
+      point.x = x;
+      var point = fireTrigger('beforePoint', point);
+      this.svgPoint(point);
     }
-    return path;
+    return values;
   }
 
   this.draw = function() {
-    for(i=0; i<data.length; i++) {
-      var path = fireTrigger('beforePath', i, data[i], opts.path);
+    $.each(data, function(i) {
+      var path = fireTrigger('beforePath', this);
       var c = graph.path("M0,0").attr({fill: "none", "stroke-width": path.attrs.stroke_width});
       var bg = graph.path("M0,0").attr({stroke: "none", opacity: path.attrs.fill_opacity});
-
-      var values = this.svgPath(path.values, graph);
+      var values = graphite.svgPath(path.points, graph);
       var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +
                       " " + opts.gutter_x + "," + (opts.height - opts.gutter_y) + "z";
+
       c.attr({path: values, stroke: opts.color});
       bg.attr({path: bg_values, fill: opts.color});
-      if (opts.draw_grid_x) {
-        this.grid(0, opts.max_y_value, "#ccc");
-      }
-      if (opts.draw_grid_y) {
-        this.grid(data[0].length - 1, 0, "#ccc");
-      }
+    });
+    if (opts.draw_grid_x) {
+      this.grid(0, opts.max_y_value, "#ccc");
+    }
+    if (opts.draw_grid_y) {
+      this.grid(data[0].points.length - 1, 0, "#ccc");
     }
   }
 
   this.labels = function() {
-    var increment_x = (opts.width - (opts.gutter_x * 2)) / (data[0].length - 1);
+    var increment_x = (opts.width - (opts.gutter_x * 2)) / (data[0].points.length - 1);
     var increment_y = (opts.height - (opts.gutter_y * 2)) / opts.max_y_value;
     if(opts.labels_x.draw) {
       $.each(labels, function(i, label) {
@@ -178,17 +192,10 @@ function Graphite() {
     var grid = graph.path(grid_path).attr({fill: "none", "stroke-width": 1, stroke: arguments[2] || "#000"}).toBack();
   }
 
-  this.svgPoint = function(point, label) {
-    var offset = point.attrs.radius / 2;
-    var x = point.values.x;
-    var y = point.values.y;
+  this.svgPoint = function(point) {
+    var x = point.x;
+    var y = point.y;
     var circle = graph.circle(x, y, point.attrs.radius)
-                  .attr({fill: point.attrs.color, stroke: "none"});
-    if (x >= opts.width - opts.tooltip.width) {
-      x = opts.width - opts.tooltip.width - offset - opts.gutter_x - 1;
-    }
-    if (y >= opts.height - opts.tooltip.height) {
-      y = opts.height - opts.tooltip.height - offset - opts.gutter_y - 1;
-    }
+                  .attr({fill: opts.color, stroke: "none"});
   }
 }
