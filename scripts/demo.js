@@ -29,7 +29,7 @@ $(function() {
     line: {
       bezier_curve: 0,
       stroke_width: 2,
-      bg_opacity: 0
+      bg_opacity: 0.2
     }
   });
   graphite.draw();

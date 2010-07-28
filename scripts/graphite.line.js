@@ -15,6 +15,15 @@ function Graphite() {
     point: {
       radius: 4
     },
+    line: {
+      bezier_curve: 10,
+      stroke: this.color,
+      stroke_width: 4
+    },
+    fill_area: {
+      fill: this.color,
+      opacity: .3
+    },
     tooltip: {
       width: 60,
       height: 25,
@@ -39,33 +48,27 @@ function Graphite() {
     labels_y: {
       draw: true,
       font: "normal 10px Helvetica, Arial, sans-serif"
-    },
-    line: {
-      bezier_curve: 10,
-      stroke: this.color,
-      stroke_width: 4,
-      bg_opacity: .3
     }
   }
   defaults.point.color = defaults.color;
   var opts = $.extend(true, defaults, arguments[3] || {});
   var lines = [];
 
-  this.path = function(data, graph) {
-    var path = "", x = opts.gutter_x || 0, y = 0;
-    var increment_x = (opts.width / (data.length - 1)) - (x * 2) / (data.length - 1);
+  this.path = function(data_points) {
+    var path = "";
+    var x = opts.gutter_x || 0, y = 0;
+    var n = data_points.length;
+    var increment_x = (opts.width / (n - 1)) - (x * 2) / (n - 1);
     var increment_y = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
-    var section;
-    var tags = [];
-    for (var i = 0, length = data.length; i < length; i++) {
+    for (var i = 0; i < n; i++) {
       if (i) {
         x += increment_x;
-        path += "S" + [x - opts.line.bezier_curve, (y = opts.height - (data[i] * increment_y) +
+        path += "S" + [x - opts.line.bezier_curve, (y = opts.height - (data_points[i] * increment_y) +
                 (opts.line.stroke_width / 2) - opts.gutter_y), x, y];
       } else {
-        path += "M" + [x, (y = opts.height - (data[i] * increment_y) + (opts.line.stroke_width / 2) - opts.gutter_y)];
+        path += "M" + [x, (y = opts.height - (data_points[i] * increment_y) + (opts.line.stroke_width / 2) - opts.gutter_y)];
       }
-      tags[i] = this.point(x, y, labels[i]);
+      this.point(x, y, labels[i]);
     }
     return path;
   }
