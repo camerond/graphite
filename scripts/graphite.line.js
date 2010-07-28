@@ -71,23 +71,27 @@ function Graphite() {
   }
 
   this.draw = function() {
-    var c = graph.path("M0,0").attr({fill: "none", "stroke-width": opts.line.stroke_width}),
-    bg = graph.path("M0,0").attr({stroke: "none", opacity: opts.line.bg_opacity});
-    var values = this.path(data, graph);
-    var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +
-                    " " + opts.gutter_x + "," + (opts.height - opts.gutter_y) + "z";
-    c.attr({path: values, stroke: opts.color});
-    bg.attr({path: bg_values, fill: opts.color});
-    if (opts.draw_grid_x) {
-      this.grid(0, opts.max_y_value, "#ccc");
-    }
-    if (opts.draw_grid_y) {
-      this.grid(data.length - 1, 0, "#ccc");
+    for(i=0; i<data.length; i++) {
+      var lineData = data[i];
+      var c = graph.path("M0,0").attr({fill: "none", "stroke-width": opts.line.stroke_width});
+      var bg = graph.path("M0,0").attr({stroke: "none", opacity: opts.line.bg_opacity});
+
+      var values = this.path(lineData, graph);
+      var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +
+                      " " + opts.gutter_x + "," + (opts.height - opts.gutter_y) + "z";
+      c.attr({path: values, stroke: opts.color});
+      bg.attr({path: bg_values, fill: opts.color});
+      if (opts.draw_grid_x) {
+        this.grid(0, opts.max_y_value, "#ccc");
+      }
+      if (opts.draw_grid_y) {
+        this.grid(data[0].length - 1, 0, "#ccc");
+      }
     }
   }
 
   this.labels = function() {
-    var increment_x = (opts.width - (opts.gutter_x * 2)) / (data.length - 1);
+    var increment_x = (opts.width - (opts.gutter_x * 2)) / (data[0].length - 1);
     var increment_y = (opts.height - (opts.gutter_y * 2)) / opts.max_y_value;
     if(opts.labels_x.draw) {
       $.each(labels, function(i, label) {
@@ -168,4 +172,5 @@ function Graphite() {
     if (typeof arguments[3] === "function") { arguments[3](tag); }
     return tag;
   }
+
 }
