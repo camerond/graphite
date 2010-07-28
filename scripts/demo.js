@@ -16,6 +16,11 @@ $(function() {
     gutter_x: 4,
     draw_grid_x: false,
     max_y_value: 100,
+    path: {
+      bezier_curve: 0,
+      stroke_width: 2,
+      bg_opacity: 0.2
+    },
     labels_y: {
       draw: false
     },
@@ -25,13 +30,24 @@ $(function() {
       adj_y: -20,
       font: "bold 11px arial",
       color: "#333"
-    },
-    line: {
-      bezier_curve: 0,
-      stroke_width: 2,
-      bg_opacity: 0.2
     }
   });
+  
+  graphite.trigger.beforePath = function(i) {
+    if(i.index == 0) {
+      i.attrs.stroke_width = 1;
+    }
+    return i;
+  }
+  
+  graphite.trigger.beforePoint = function(i) {
+    if(i.index == 4) {
+      i.attrs.radius = 10;
+    }
+    return i;
+  }
+  
+  
   graphite.draw();
   graphite.labels();
 

@@ -1,4 +1,5 @@
 function Graphite() {
+  var graphite = this;
   var graph = arguments[0];
   var data = arguments[1];
   var labels = arguments[2];
@@ -15,14 +16,11 @@ function Graphite() {
     point: {
       radius: 4
     },
-    line: {
+    path: {
       bezier_curve: 10,
       stroke: this.color,
-      stroke_width: 4
-    },
-    fill_area: {
-      fill: this.color,
-      opacity: .3
+      stroke_width: 4,
+      fill_opacity: .3
     },
     tooltip: {
       width: 60,
@@ -52,9 +50,26 @@ function Graphite() {
   }
   defaults.point.color = defaults.color;
   var opts = $.extend(true, defaults, arguments[3] || {});
-  var lines = [];
 
-  this.path = function(data_points) {
+  this.trigger = {
+    beforePoint : {},
+    beforePath : {}
+  };
+  
+  function fireTrigger(name, index, data, attrs) {
+    var obj = {
+      index: index,
+      values: data,
+      attrs: attrs
+    }
+    var fire = graphite.trigger[name];
+    if(typeof fire == 'function') {
+      return fire(obj);
+    }
+    return obj;
+  }
+
+  this.svgPath = function(data_points) {
     var path = "";
     var x = opts.gutter_x || 0, y = 0;
     var n = data_points.length;
@@ -63,23 +78,29 @@ function Graphite() {
     for (var i = 0; i < n; i++) {
       if (i) {
         x += increment_x;
-        path += "S" + [x - opts.line.bezier_curve, (y = opts.height - (data_points[i] * increment_y) +
-                (opts.line.stroke_width / 2) - opts.gutter_y), x, y];
+        path += "S" + [x - opts.path.bezier_curve, (y = opts.height - (data_points[i] * increment_y) +
+                (opts.path.stroke_width / 2) - opts.gutter_y), x, y];
       } else {
-        path += "M" + [x, (y = opts.height - (data_points[i] * increment_y) + (opts.line.stroke_width / 2) - opts.gutter_y)];
+        path += "M" + [x, (y = opts.height - (data_points[i] * increment_y) + (opts.path.stroke_width / 2) - opts.gutter_y)];
       }
-      this.point(x, y, labels[i]);
+      var data = {
+        x: x,
+        y: y
+      };
+      console.log(opts.point.radius);
+      var point = fireTrigger('beforePoint', i, data, $.extend(opts.point));
+      this.svgPoint(point, labels[i]);
     }
     return path;
   }
 
   this.draw = function() {
     for(i=0; i<data.length; i++) {
-      var lineData = data[i];
-      var c = graph.path("M0,0").attr({fill: "none", "stroke-width": opts.line.stroke_width});
-      var bg = graph.path("M0,0").attr({stroke: "none", opacity: opts.line.bg_opacity});
+      var path = fireTrigger('beforePath', i, data[i], opts.path);
+      var c = graph.path("M0,0").attr({fill: "none", "stroke-width": path.attrs.stroke_width});
+      var bg = graph.path("M0,0").attr({stroke: "none", opacity: path.attrs.fill_opacity});
 
-      var values = this.path(lineData, graph);
+      var values = this.svgPath(path.values, graph);
       var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +
                       " " + opts.gutter_x + "," + (opts.height - opts.gutter_y) + "z";
       c.attr({path: values, stroke: opts.color});
@@ -139,10 +160,12 @@ function Graphite() {
     var grid = graph.path(grid_path).attr({fill: "none", "stroke-width": 1, stroke: arguments[2] || "#000"}).toBack();
   }
 
-  this.point = function(x, y, point_label) {
-    var offset = opts.point.radius / 2;
-    var point = graph.circle(x, y, opts.point.radius)
-                  .attr({fill: opts.point.color, stroke: "none"});
+  this.svgPoint = function(point, label) {
+    var offset = point.attrs.radius / 2;
+    var x = point.values.x;
+    var y = point.values.y;
+    var circle = graph.circle(x, y, point.attrs.radius)
+                  .attr({fill: point.attrs.color, stroke: "none"});
     if (x >= opts.width - opts.tooltip.width) {
       x = opts.width - opts.tooltip.width - offset - opts.gutter_x - 1;
     }
@@ -156,7 +179,7 @@ function Graphite() {
         "stroke-width": 1,
         opacity: 0
       }),
-      graph.text(x + opts.tooltip.width / 2, y + opts.tooltip.height / 2, point_label).attr({
+      graph.text(x + opts.tooltip.width / 2, y + opts.tooltip.height / 2, label).attr({
         font: opts.tooltip_text.font,
         fill: opts.tooltip_text.color,
         opacity: 0
@@ -175,5 +198,4 @@ function Graphite() {
     if (typeof arguments[3] === "function") { arguments[3](tag); }
     return tag;
   }
-
 }
