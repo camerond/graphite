@@ -87,7 +87,6 @@ function Graphite() {
         x: x,
         y: y
       };
-      console.log(opts.point.radius);
       var point = fireTrigger('beforePoint', i, data, $.extend(opts.point));
       this.svgPoint(point, labels[i]);
     }
@@ -172,30 +171,5 @@ function Graphite() {
     if (y >= opts.height - opts.tooltip.height) {
       y = opts.height - opts.tooltip.height - offset - opts.gutter_y - 1;
     }
-    var tag = graph.set(
-      graph.rect(x + offset, y + offset, opts.tooltip.width, opts.tooltip.height, opts.tooltip.radius).attr({
-        fill: opts.tooltip.fill,
-        stroke: opts.tooltip.stroke,
-        "stroke-width": 1,
-        opacity: 0
-      }),
-      graph.text(x + opts.tooltip.width / 2, y + opts.tooltip.height / 2, label).attr({
-        font: opts.tooltip_text.font,
-        fill: opts.tooltip_text.color,
-        opacity: 0
-      })
-    );
-    $(point.node).css({cursor: "pointer"});
-    $(point.node).hover(function() {
-      $.each(tag, function(i, el) {
-        el.animate({opacity: 1}, opts.tooltip.duration);
-      });
-    }, function() {
-      $.each(tag, function(i, el) {
-        el.animate({opacity: 0}, opts.tooltip.duration);
-      });
-    });
-    if (typeof arguments[3] === "function") { arguments[3](tag); }
-    return tag;
   }
 }

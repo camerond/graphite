@@ -2,7 +2,7 @@ $(function() {
   var $container = $("#graph");
   var graph = Raphael("graph", $container.width(), $container.height());
   var $table = $("table");
-  var data = [], points = [], labels = [];
+  var data = [], labels = [];
   $table.find("tbody tr").each(function(i) {
     var $tr = $(this);
     for(var i=0; i<$tr.find("td").size(); i++) {
