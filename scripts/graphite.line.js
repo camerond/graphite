@@ -31,7 +31,6 @@ function Graphite() {
     }
   }
   var opts = $.extend(true, defaults, arguments[2] || {});
-
   this.attr = function(opt) {
     return opts[opt];
   }
@@ -83,9 +82,10 @@ function Graphite() {
     var pathObj = {
       label: name,
       points: [],
-      attr: $.extend(opts.path, newOpts)
+      attr: $.extend({}, opts.path)
     }
     var newPath = $.extend({}, pathObj);
+    newPath.attr = $.extend(newPath.attr, newOpts);
 
     $.each(values, function(k, v) {
       var pointObj = {
@@ -132,7 +132,7 @@ function Graphite() {
       var path = fireTrigger('beforePath', this);
       var c = graph.path("M0,0").attr({fill: "none", "stroke-width": path.attr.stroke_width});
       var values = graphite.svgPath(path.points);
-      c.attr({path: values, stroke: opts.path.color});
+      c.attr({path: values, stroke: path.attr.color});
       if(opts.path.fill_opacity > 0) {
         var bg = graph.path("M0,0").attr({stroke: "none", opacity: path.attr.fill_opacity});
         var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +

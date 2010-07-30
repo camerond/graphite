@@ -22,7 +22,7 @@ $(function() {
   });
 
   graphite.addLabels(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul'])
-  graphite.addPath('test path', [19, 20, 50, 22.5, 42.1, 43.6, 12]);
+  graphite.addPath('test path', [19, 20, 50, 22.5, 42.1, 43.6, 12], {color: '#004156'});
   graphite.addPath('test path 2', [86, 51, 24, 51, 1, 27, 54]);
 
   var overlays = {};
@@ -56,10 +56,12 @@ $(function() {
 
   graphite.trigger.mouseoverPoint = function(point) {
     var avg = 0;
-    $.each(point.parent.points, function() {
+    var parent = point.parent
+    $.each(parent.points, function() {
       avg += this.amount;
     });
-    avg = avg / point.parent.points.length;
+    avg = avg / parent.points.length;
+    $('.avgLine').css('background', parent.attr.color);
     $('.avgLine').animate({'top': graphite.getYOffset(avg)}, 100).fadeIn(100);
 
     var t = graphite.tooltip;
