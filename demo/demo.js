@@ -1,5 +1,5 @@
 $(function() {
-  var graphite = new Graphite($("#graph"), $("table"), {
+  var graphite = new Graphite($("#graph"), {
     bezier_curve: 0,
     gutter_x: 4,
     draw_grid_x: false,

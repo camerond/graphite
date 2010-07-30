@@ -30,7 +30,7 @@ function Graphite() {
       font: "normal 10px Helvetica, Arial, sans-serif"
     }
   }
-  var opts = $.extend(true, defaults, arguments[2] || {});
+  var opts = $.extend(true, defaults, arguments[1] || {});
   this.attr = function(opt) {
     return opts[opt];
   }
