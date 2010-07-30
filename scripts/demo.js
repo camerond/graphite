@@ -7,7 +7,7 @@ $(function() {
     path: {
       bezier_curve: 0,
       stroke_width: 2,
-      bg_opacity: 0.2
+      fill_opacity: 0
     },
     labels_y: {
       draw: false
@@ -20,19 +20,50 @@ $(function() {
       color: "#333"
     }
   });
+
+  var overlays = {};
   
+  $('<div />').addClass('avgLine').appendTo($("#graph"));
+
+  graphite.trigger.mouseoverGraph = function(i) {
+  }
+
+  graphite.trigger.mouseoutGraph = function(i) {
+    graphite.tooltip.fadeOut(100);
+    $('.avgLine').fadeOut(100);
+  }
+
   graphite.trigger.beforePath = function(i) {
     if(i.index == 0) {
-      i.attrs.stroke_width = 1;
+      i.attr.stroke_width = 1;
     }
     return i;
   }
-  
+
   graphite.trigger.beforePoint = function(i) {
-    if(i.index == 4) {
-      i.attrs.radius = 10;
+    if((i.index == 1) || (i.index == i.parent.points.length)) {
+      i.attr.radius = 0;
     }
     return i;
+  }
+
+  graphite.trigger.mouseoverPath = function(path) {
+  }
+
+  graphite.trigger.mouseoverPoint = function(point) {
+    var avg = 0;
+    $.each(point.parent.points, function() {
+      avg += this.amount;
+    });
+    avg = avg / point.parent.points.length;
+    $('.avgLine').animate({'top': graphite.getYOffset(avg)}, 100).fadeIn(100);
+
+    var t = graphite.tooltip;
+    t.text(point.amount);
+    var x = point.x - t.innerWidth() / 2;
+    var y = point.y - t.outerHeight() - 10;
+    t.animate({left: x, top: y}, 100).fadeIn(100);
+    return point;
   }
 
   graphite.draw();

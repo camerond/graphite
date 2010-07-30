@@ -4,14 +4,15 @@ function Graphite() {
     draw_grid_x: true,
     draw_grid_y: true,
     draw_legends: true,
-    max_y_value: 100,
+    max_y_value: false,
     gutter_x: 20,
     gutter_y: 20,
-    color: Raphael.getColor(),
+    tooltip_class: 'tooltip',
     point: {
       radius: 4
     },
     path: {
+      color: Raphael.getColor(),
       bezier_curve: 10,
       stroke_width: 4,
       fill_opacity: .3
@@ -31,6 +32,10 @@ function Graphite() {
   }
   var opts = $.extend(true, defaults, arguments[2] || {});
 
+  this.attr = function(opt) {
+    return opts[opt];
+  }
+
   var graph = initGraph(arguments[0]);
   var labels = [];
   var data = parseData(arguments[1]);
@@ -38,9 +43,16 @@ function Graphite() {
   this.trigger = {
     beforePoint : {},
     beforePath : {},
-    mouseoverPoint : {}
+    mouseoverPoint : {},
+    mouseoutPoint : {},
+    mouseoverPath : {},
+    mouseoutPath : {},
+    mouseoverGraph : {},
+    mouseoutGraph : {}
   };
-  
+
+  this.tooltip = $('.' + opts.tooltip_class);
+
   function fireTrigger(name, obj) {
     var fire = graphite.trigger[name];
     if(typeof fire == 'function') {
@@ -53,6 +65,16 @@ function Graphite() {
     var graph = Raphael("graph", $obj.width(), $obj.height());
     opts.width = graph.canvas.clientWidth;
     opts.height = graph.canvas.clientHeight;
+
+    $("<div />").addClass(opts.tooltip_class).appendTo($obj);
+
+    $obj.mouseenter(function(event) {
+      fireTrigger('mouseoverGraph', graph);
+    });
+    $obj.mouseleave(function(event) {
+      fireTrigger('mouseoutGraph', graph);
+    });
+
     return graph;
   }
 
@@ -68,7 +90,7 @@ function Graphite() {
             index: j-1,
             label: $(this).text(),
             points: [],
-            attrs: $.extend({}, opts.path)
+            attr: $.extend({}, opts.path)
           }
           paths[j] = $.extend({}, newPath);
         });
@@ -79,8 +101,9 @@ function Graphite() {
           } else {
             var newPoint = {
               index: i,
+              parent: paths[j],
               amount: parseFloat($(this).text(), 10),
-              attrs: $.extend({}, opts.point)
+              attr: $.extend({}, opts.point)
             };
             paths[j].points.push($.extend({}, newPoint));
           }
@@ -88,7 +111,9 @@ function Graphite() {
       }
     });
     paths.shift();
-    opts.max_y_value = findMax();
+    if(!opts.max_y_value) {
+      opts.max_y_value = findMax();
+    }
     return paths;
 
     function findMax() {
@@ -129,14 +154,21 @@ function Graphite() {
   this.draw = function() {
     $.each(data, function(i) {
       var path = fireTrigger('beforePath', this);
-      var c = graph.path("M0,0").attr({fill: "none", "stroke-width": path.attrs.stroke_width});
-      var bg = graph.path("M0,0").attr({stroke: "none", opacity: path.attrs.fill_opacity});
-      var values = graphite.svgPath(path.points, graph);
-      var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +
-                      " " + opts.gutter_x + "," + (opts.height - opts.gutter_y) + "z";
-
-      c.attr({path: values, stroke: opts.color});
-      bg.attr({path: bg_values, fill: opts.color});
+      var c = graph.path("M0,0").attr({fill: "none", "stroke-width": path.attr.stroke_width});
+      var values = graphite.svgPath(path.points);
+      c.attr({path: values, stroke: opts.path.color});
+      if(opts.path.fill_opacity > 0) {
+        var bg = graph.path("M0,0").attr({stroke: "none", opacity: path.attr.fill_opacity});
+        var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +
+                        " " + opts.gutter_x + "," + (opts.height - opts.gutter_y) + "z";
+        bg.attr({path: bg_values, fill: opts.path.color});
+      }
+      c.mouseover(function(event) {
+        fireTrigger('mouseoverPath', path);
+      });
+      c.mouseout(function(event) {
+        fireTrigger('mouseoutPath', path);
+      });
     });
     if (opts.draw_grid_x) {
       this.grid(0, opts.max_y_value, "#ccc");
@@ -144,6 +176,12 @@ function Graphite() {
     if (opts.draw_grid_y) {
       this.grid(data[0].points.length - 1, 0, "#ccc");
     }
+  }
+
+  this.getYOffset = function(value) {
+    var increment_y = (opts.height - (opts.gutter_y * 2)) / opts.max_y_value;
+    var y = opts.height - Math.floor(value * increment_y) - opts.gutter_y;
+    return y
   }
 
   this.labels = function() {
@@ -195,7 +233,13 @@ function Graphite() {
   this.svgPoint = function(point) {
     var x = point.x;
     var y = point.y;
-    var circle = graph.circle(x, y, point.attrs.radius)
-                  .attr({fill: opts.color, stroke: "none"});
+    var circle = graph.circle(x, y, point.attr.radius)
+                  .attr({fill: opts.path.color, stroke: "none"});
+    circle.mouseover(function(event) {
+      fireTrigger('mouseoverPoint', point);
+    });
+    circle.mouseout(function(event) {
+      fireTrigger('mouseoutPoint', point);
+    });
   }
 }
