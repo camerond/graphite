@@ -38,7 +38,7 @@ function Graphite() {
 
   var graph = initGraph(arguments[0]);
   var labels = [];
-  var data = parseData(arguments[1]);
+  var data = [];
 
   this.trigger = {
     beforePoint : {},
@@ -78,55 +78,31 @@ function Graphite() {
     return graph;
   }
 
-  function parseData($obj) {
+  this.addPath = function(name, values, newOpts) {
 
-    var paths = [];
-    $obj.find("tr").each(function(i) {
-      var $tr = $(this);
-      if($tr.parent()[0].tagName == 'THEAD') {
-        $tr.children().each(function(j) {
-          if(j===0) { return; }
-          newPath = {
-            index: j-1,
-            label: $(this).text(),
-            points: [],
-            attr: $.extend({}, opts.path)
-          }
-          paths[j] = $.extend({}, newPath);
-        });
-      } else {
-        $tr.children().each(function(j) {
-          if(j===0) {
-            labels.push($(this).text());
-          } else {
-            var newPoint = {
-              index: i,
-              parent: paths[j],
-              amount: parseFloat($(this).text(), 10),
-              attr: $.extend({}, opts.point)
-            };
-            paths[j].points.push($.extend({}, newPoint));
-          }
-        });
-      }
+    var pathObj = {
+      label: name,
+      points: [],
+      attr: $.extend(opts.path, newOpts)
+    }
+    var newPath = $.extend({}, pathObj);
+
+    $.each(values, function(k, v) {
+      var pointObj = {
+        index: k,
+        parent: newPath,
+        amount: v,
+        attr: $.extend({}, opts.point)
+      };
+      newPath.points.push($.extend({}, pointObj));
     });
-    paths.shift();
-    if(!opts.max_y_value) {
-      opts.max_y_value = findMax();
-    }
-    return paths;
 
-    function findMax() {
-      var maxValue = 0;
-      $.each(paths, function() {
-        $.each(this.points, function() {
-          if (this.amount > maxValue) {
-            maxValue = this.amount;
-          }
-        });
-      });
-      return maxValue;
-    }
+    data.push(newPath);
+    return newPath;
+  }
+
+  this.addLabels = function(l) {
+    labels = l;
   }
 
   this.svgPath = function(points) {
@@ -234,7 +210,7 @@ function Graphite() {
     var x = point.x;
     var y = point.y;
     var circle = graph.circle(x, y, point.attr.radius)
-                  .attr({fill: opts.path.color, stroke: "none"});
+                  .attr({fill: point.parent.attr.color, stroke: "none"});
     circle.mouseover(function(event) {
       fireTrigger('mouseoverPoint', point);
     });

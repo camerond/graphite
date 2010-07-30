@@ -21,8 +21,12 @@ $(function() {
     }
   });
 
+  graphite.addLabels(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul'])
+  graphite.addPath('test path', [19, 20, 50, 22.5, 42.1, 43.6, 12]);
+  graphite.addPath('test path 2', [86, 51, 24, 51, 1, 27, 54]);
+
   var overlays = {};
-  
+
   $('<div />').addClass('avgLine').appendTo($("#graph"));
 
   graphite.trigger.mouseoverGraph = function(i) {
@@ -41,7 +45,7 @@ $(function() {
   }
 
   graphite.trigger.beforePoint = function(i) {
-    if((i.index == 1) || (i.index == i.parent.points.length)) {
+    if((i.index == 0) || (i.index == i.parent.points.length-1)) {
       i.attr.radius = 0;
     }
     return i;
