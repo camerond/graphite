@@ -1,14 +1,17 @@
 function Graphite() {
   var graphite = this;
   var defaults = {
-    draw_grid_x: true,
-    draw_grid_y: true,
-    grid_color: '#ccc',
     draw_legends: true,
-    max_y_value: false,
+    max_y_value: 0,
     gutter_x: 20,
     gutter_y: 20,
     tooltip_class: 'tooltip',
+    grid: {
+      draw_x: true,
+      draw_y: true,
+      color: "#ccc",
+      increment_y: 0
+    },
     point: {
       radius: 4
     },
@@ -39,7 +42,6 @@ function Graphite() {
   var graph = initGraph(arguments[0]);
   var labels = [];
   var data = [];
-  var gridlines = [];
 
   this.trigger = {
     beforePoint : {},
@@ -79,16 +81,33 @@ function Graphite() {
     return graph;
   }
 
-  this.addPath = function(name, values, newOpts) {
+  this.refresh = function() {
+    $.each(data, function(k, v) {
+      if(v.element) {
+        v.element.remove();
+      }
+      $.each(v.points, function(k, v) {
+        if(v.element) {
+          v.element.remove();
+        }
+        if(v.amount > opts.max_y_value) {
+          opts.max_y_value = v.amount;
+        }
+      });
+      v.element = graphite.drawPath(v);
+      graphite.grid = graphite.drawGrid();
+    });
+  }
 
+  this.addPath = function(name, values, newOpts) {
     var pathObj = {
+      index: data.length,
       label: name,
       points: [],
       attr: $.extend({}, opts.path)
     }
     var newPath = $.extend({}, pathObj);
     newPath.attr = $.extend(newPath.attr, newOpts);
-
     $.each(values, function(k, v) {
       var pointObj = {
         index: k,
@@ -96,8 +115,8 @@ function Graphite() {
         amount: v,
         attr: $.extend({}, opts.point)
       };
-      if(v > this.max_y_value) {
-        this.max_y_value = v;
+      if(v > opts.max_y_value) {
+        opts.max_y_value = v;
       }
       newPath.points.push($.extend({}, pointObj));
     });
@@ -105,14 +124,15 @@ function Graphite() {
     graphite.scale_y = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
 
     data.push(newPath);
-    newPath.element = this.drawPath(newPath);
 
-    this.drawGrid();
+    this.refresh();
+
     return newPath;
 
   }
 
-  this.removePath = function(i) {
+  this.removePath = function(path) {
+    var i = path.index;
     data[i].element.remove();
     $.each(data[i].points, function(point) {
       this.element.remove();
@@ -171,30 +191,42 @@ function Graphite() {
   }
 
   this.drawGrid = function() {
-    var x_count = data[0].points.length - 1;
+    if(this.grid) {
+      this.grid.remove();
+    }
+    var x_count = labels.length - 1;
     var y_count = opts.max_y_value;
+    var increment_x = 0;
+    var increment_y = 0;
     var grid_path = "M" + opts.gutter_x + ".5," + opts.gutter_y;
-    var x_increment = (opts.width - (opts.gutter_x * 2)) / x_count;
-    var y_increment = (opts.height - (opts.gutter_y * 2)) / y_count;
+
+    if(opts.grid.draw_x) {
+      increment_x = (opts.width - (opts.gutter_x * 2)) / x_count;
+    }
+    if(opts.grid.draw_y) {
+      if(opts.grid.increment_y) {
+        increment_y = (opts.height - opts.gutter_y * 2) / (opts.max_y_value / opts.grid.increment_y);
+      } else {
+        increment_y = this.scale_y;
+      }
+    }
+
     var inner_width = opts.width - opts.gutter_x;
     var inner_height = opts.height - opts.gutter_y;
-    if (y_increment < 10) {
-      y_increment = 10;
-      y_count = (opts.height - opts.gutter_y * 2) / y_increment;
-    }
-    for (var q = 0; q < x_count; q++) {
+
+    for (var q = 0; q <= x_count; q++) {
       if (q) {
-        grid_path += "M" + (q * x_increment + opts.gutter_x + .5) + "," + opts.gutter_y;
+        grid_path += "M" + (q * increment_x + opts.gutter_x + .5) + "," + opts.gutter_y;
       }
-      grid_path += "L" + (q * x_increment + opts.gutter_x + .5) + "," + (opts.height - opts.gutter_y);
+      grid_path += "L" + (q * increment_x + opts.gutter_x + .5) + "," + (opts.height - opts.gutter_y);
     }
     for (var q = 0; q < y_count; q++) {
-      grid_path += "M" + opts.gutter_x + "," + (q * y_increment + opts.gutter_y + .5) + "L" +
-                   inner_width + "," + (q * y_increment + opts.gutter_y + .5);
+      grid_path += "M" + opts.gutter_x + "," + (q * increment_y + opts.gutter_y + .5) + "L" +
+                   inner_width + "," + (q * increment_y + opts.gutter_y + .5);
     }
-    grid_path += "M" + (inner_width - .5) + "," + opts.gutter_y + "L" + (inner_width - .5) + "," +
-                 (inner_height - .5) + "L" + opts.gutter_x + "," + (inner_height - .5);
-    var grid = graph.path(grid_path).attr({fill: "none", "stroke-width": 1, stroke: opts.grid_color}).toBack();
+
+    return graph.path(grid_path).attr({fill: "none", "stroke-width": 1, stroke: opts.grid.color}).toBack();
+
   }
 
   this.svgPath = function(points) {

@@ -2,8 +2,13 @@ $(function() {
   var graphite = new Graphite($("#graph"), {
     bezier_curve: 0,
     gutter_x: 4,
-    draw_grid_x: false,
     max_y_value: 100,
+    grid: {
+      draw_x: true,
+      draw_y: true,
+      increment_y: 5,
+      color: "#ccc"
+    },
     path: {
       bezier_curve: 0,
       stroke_width: 2,
@@ -38,9 +43,6 @@ $(function() {
   }
 
   graphite.trigger.beforePath = function(i) {
-    if(i.index == 0) {
-      i.attr.stroke_width = 1;
-    }
     return i;
   }
 
@@ -52,6 +54,7 @@ $(function() {
   }
 
   graphite.trigger.mouseoverPath = function(path) {
+    graphite.addPath('test path 3', [4, 4, 6, 181, 31, 43, 66]);
   }
 
   graphite.trigger.mouseoverPoint = function(point) {
