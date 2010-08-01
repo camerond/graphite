@@ -94,19 +94,36 @@ function Graphite() {
         amount: v,
         attr: $.extend({}, opts.point)
       };
+      if(v > this.max_y_value) {
+        this.max_y_value = v;
+      }
       newPath.points.push($.extend({}, pointObj));
     });
 
     data.push(newPath);
+    newPath.element = this.drawPath(newPath);
+
+    this.scaleY = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
+
     return newPath;
+
+  }
+
+  this.removePath = function(i) {
+    data[i].element.remove();
+    $.each(data[i].points, function(point) {
+      this.element.remove();
+    })
+    data.splice(i, 1);
   }
 
   this.addLabels = function(l) {
     labels = l;
+    this.scaleX = (opts.width / (labels.length - 1)) - (opts.gutter_x * 2) / (labels.length - 1);
   }
 
   this.svgPath = function(points) {
-    var values = "";
+    var coordinates = "";
     var x = opts.gutter_x || 0, y = 0;
     var n = points.length;
     var increment_x = (opts.width / (n - 1)) - (x * 2) / (n - 1);
@@ -116,42 +133,35 @@ function Graphite() {
       point.y = opts.height - (point.amount * increment_y) + (opts.path.stroke_width / 2) - opts.gutter_y;
       if (i) {
         x += increment_x;
-        values += "S" + [x - opts.path.bezier_curve, (y = point.y), x, y];
+        coordinates += "S" + [x - opts.path.bezier_curve, (y = point.y), x, y];
       } else {
-        values += "M" + [x, (y = point.y)];
+        coordinates += "M" + [x, (y = point.y)];
       }
       point.x = x;
       var point = fireTrigger('beforePoint', point);
-      this.svgPoint(point);
+      point.element = this.svgPoint(point);
     }
-    return values;
+    return coordinates;
   }
 
-  this.draw = function() {
-    $.each(data, function(i) {
-      var path = fireTrigger('beforePath', this);
-      var c = graph.path("M0,0").attr({fill: "none", "stroke-width": path.attr.stroke_width});
-      var values = graphite.svgPath(path.points);
-      c.attr({path: values, stroke: path.attr.color});
-      if(opts.path.fill_opacity > 0) {
-        var bg = graph.path("M0,0").attr({stroke: "none", opacity: path.attr.fill_opacity});
-        var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +
-                        " " + opts.gutter_x + "," + (opts.height - opts.gutter_y) + "z";
-        bg.attr({path: bg_values, fill: opts.path.color});
-      }
-      c.mouseover(function(event) {
-        fireTrigger('mouseoverPath', path);
-      });
-      c.mouseout(function(event) {
-        fireTrigger('mouseoutPath', path);
-      });
+  this.drawPath = function(p) {
+    var path = fireTrigger('beforePath', p);
+    var c = graph.path("M0,0").attr({fill: "none", stroke: path.attr.color, "stroke-width": path.attr.stroke_width});
+    var coordinates = graphite.svgPath(path.points);
+    c.attr({path: coordinates});
+    if(opts.path.fill_opacity > 0) {
+      var bg = graph.path("M0,0").attr({stroke: "none", opacity: path.attr.fill_opacity});
+      var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +
+                      " " + opts.gutter_x + "," + (opts.height - opts.gutter_y) + "z";
+      bg.attr({path: bg_values, fill: opts.path.color});
+    }
+    c.mouseover(function(event) {
+      fireTrigger('mouseoverPath', path);
     });
-    if (opts.draw_grid_x) {
-      this.grid(0, opts.max_y_value, "#ccc");
-    }
-    if (opts.draw_grid_y) {
-      this.grid(data[0].points.length - 1, 0, "#ccc");
-    }
+    c.mouseout(function(event) {
+      fireTrigger('mouseoutPath', path);
+    });
+    return c;
   }
 
   this.getYOffset = function(value) {
@@ -178,6 +188,16 @@ function Graphite() {
       for (var i = 0; i <= opts.max_y_value; i++) {
         graph.text(opts.gutter_x, opts.height - (i * increment_y + opts.gutter_y), i).attr({"text-anchor": "end"});
       }
+    }
+  }
+
+
+  this.generateGrid = function() {
+    if (opts.draw_grid_x) {
+      this.grid(0, opts.max_y_value, "#ccc");
+    }
+    if (opts.draw_grid_y) {
+      this.grid(data[0].points.length - 1, 0, "#ccc");
     }
   }
 
@@ -217,5 +237,6 @@ function Graphite() {
     circle.mouseout(function(event) {
       fireTrigger('mouseoutPoint', point);
     });
+    return circle;
   }
 }
