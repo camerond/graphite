@@ -3,6 +3,7 @@ function Graphite() {
   var defaults = {
     draw_grid_x: true,
     draw_grid_y: true,
+    grid_color: '#ccc',
     draw_legends: true,
     max_y_value: false,
     gutter_x: 20,
@@ -38,6 +39,7 @@ function Graphite() {
   var graph = initGraph(arguments[0]);
   var labels = [];
   var data = [];
+  var gridlines = [];
 
   this.trigger = {
     beforePoint : {},
@@ -100,11 +102,12 @@ function Graphite() {
       newPath.points.push($.extend({}, pointObj));
     });
 
+    graphite.scale_y = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
+
     data.push(newPath);
     newPath.element = this.drawPath(newPath);
 
-    this.scaleY = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
-
+    this.drawGrid();
     return newPath;
 
   }
@@ -119,29 +122,7 @@ function Graphite() {
 
   this.addLabels = function(l) {
     labels = l;
-    this.scaleX = (opts.width / (labels.length - 1)) - (opts.gutter_x * 2) / (labels.length - 1);
-  }
-
-  this.svgPath = function(points) {
-    var coordinates = "";
-    var x = opts.gutter_x || 0, y = 0;
-    var n = points.length;
-    var increment_x = (opts.width / (n - 1)) - (x * 2) / (n - 1);
-    var increment_y = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
-    for (var i = 0; i < n; i++) {
-      var point = points[i];
-      point.y = opts.height - (point.amount * increment_y) + (opts.path.stroke_width / 2) - opts.gutter_y;
-      if (i) {
-        x += increment_x;
-        coordinates += "S" + [x - opts.path.bezier_curve, (y = point.y), x, y];
-      } else {
-        coordinates += "M" + [x, (y = point.y)];
-      }
-      point.x = x;
-      var point = fireTrigger('beforePoint', point);
-      point.element = this.svgPoint(point);
-    }
-    return coordinates;
+    this.scale_x = (opts.width / (labels.length - 1)) - (opts.gutter_x * 2) / (labels.length - 1);
   }
 
   this.drawPath = function(p) {
@@ -165,9 +146,7 @@ function Graphite() {
   }
 
   this.getYOffset = function(value) {
-    var increment_y = (opts.height - (opts.gutter_y * 2)) / opts.max_y_value;
-    var y = opts.height - Math.floor(value * increment_y) - opts.gutter_y;
-    return y
+    return opts.height - Math.floor(value * this.scale_y) - opts.gutter_y;
   }
 
   this.labels = function() {
@@ -191,17 +170,9 @@ function Graphite() {
     }
   }
 
-
-  this.generateGrid = function() {
-    if (opts.draw_grid_x) {
-      this.grid(0, opts.max_y_value, "#ccc");
-    }
-    if (opts.draw_grid_y) {
-      this.grid(data[0].points.length - 1, 0, "#ccc");
-    }
-  }
-
-  this.grid = function(x_count, y_count) {
+  this.drawGrid = function() {
+    var x_count = data[0].points.length - 1;
+    var y_count = opts.max_y_value;
     var grid_path = "M" + opts.gutter_x + ".5," + opts.gutter_y;
     var x_increment = (opts.width - (opts.gutter_x * 2)) / x_count;
     var y_increment = (opts.height - (opts.gutter_y * 2)) / y_count;
@@ -223,7 +194,27 @@ function Graphite() {
     }
     grid_path += "M" + (inner_width - .5) + "," + opts.gutter_y + "L" + (inner_width - .5) + "," +
                  (inner_height - .5) + "L" + opts.gutter_x + "," + (inner_height - .5);
-    var grid = graph.path(grid_path).attr({fill: "none", "stroke-width": 1, stroke: arguments[2] || "#000"}).toBack();
+    var grid = graph.path(grid_path).attr({fill: "none", "stroke-width": 1, stroke: opts.grid_color}).toBack();
+  }
+
+  this.svgPath = function(points) {
+    var coordinates = "";
+    var x = opts.gutter_x || 0, y = 0;
+    var n = points.length;
+    for (var i = 0; i < n; i++) {
+      var point = points[i];
+      point.y = opts.height - (point.amount * graphite.scale_y) + (opts.path.stroke_width / 2) - opts.gutter_y;
+      if (i) {
+        x += graphite.scale_x;
+        coordinates += "S" + [x - opts.path.bezier_curve, (y = point.y), x, y];
+      } else {
+        coordinates += "M" + [x, (y = point.y)];
+      }
+      point.x = x;
+      var point = fireTrigger('beforePoint', point);
+      point.element = this.svgPoint(point);
+    }
+    return coordinates;
   }
 
   this.svgPoint = function(point) {
