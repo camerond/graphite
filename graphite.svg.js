@@ -34,14 +34,15 @@ function Graphite() {
       font: "normal 10px Helvetica, Arial, sans-serif"
     }
   }
-  var opts = $.extend(true, defaults, arguments[1] || {});
+  var user_opts = arguments[1];
+  var opts = $.extend(true, defaults, user_opts || {});
   this.attr = function(opt) {
     return opts[opt];
   }
 
   var graph = initGraph(arguments[0]);
   var labels = [];
-  var data = [];
+  var data = {};
 
   this.trigger = {
     beforePoint : {},
@@ -77,7 +78,6 @@ function Graphite() {
     $obj.mouseleave(function(event) {
       fireTrigger('mouseoutGraph', graph);
     });
-
     return graph;
   }
 
@@ -96,13 +96,23 @@ function Graphite() {
     this.grid = this.drawGrid();
   }
 
+  this.setYScale = function(v) {
+    if(opts.grid.gap_y != 0) {
+      opts.max_y_value = v + opts.grid.gap_y - (v % opts.grid.gap_y);
+    } else {
+      opts.max_y_value = v;
+    }
+    graphite.scale_y = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
+  }
+
   this.addPath = function(name, values, newOpts) {
+    if($.isEmptyObject(data)) {
+      this.setYScale(opts.max_y_value);
+    }
     var pathObj = {
-      index: data.length,
-      label: name,
       points: [],
       attr: $.extend({}, opts.path)
-    }
+    };
     var newPath = $.extend({}, pathObj);
     newPath.attr = $.extend(newPath.attr, newOpts);
     $.each(values, function(k, v) {
@@ -113,18 +123,12 @@ function Graphite() {
         attr: $.extend({}, opts.point)
       };
       if(v > opts.max_y_value) {
-        if(opts.grid.gap_y != 0) {
-          opts.max_y_value = v + opts.grid.gap_y - (v % opts.grid.gap_y);
-        } else {
-          opts.max_y_value = v;
-        }
+        graphite.setYScale(v);
       }
       newPath.points.push($.extend({}, pointObj));
     });
 
-    graphite.scale_y = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
-
-    data.push(newPath);
+    data[name] = newPath;
 
     this.refresh();
 
@@ -132,13 +136,25 @@ function Graphite() {
 
   }
 
-  this.removePath = function(path) {
-    var i = path.index;
-    data[i].element.remove();
-    $.each(data[i].points, function(point) {
+  this.removePath = function(pathName) {
+    var path = data[pathName];
+    path.element.remove();
+    $.each(path.points, function(point) {
       this.element.remove();
-    })
-    data.splice(i, 1);
+    });
+    delete data[pathName];
+    if(opts.max_y_value > user_opts.max_y_value) {
+      var newMax = user_opts.max_y_value;
+      $.each(data, function(k, v) {
+        $.each(v.points, function(k, v) {
+          if(v.amount > newMax) {
+            newMax = v.amount;
+          }
+        });
+      });
+      graphite.setYScale(newMax);
+    };
+    this.refresh();
   }
 
   this.addLabels = function(l) {
@@ -171,7 +187,7 @@ function Graphite() {
   }
 
   this.labels = function() {
-    var increment_x = (opts.width - (opts.gutter_x * 2)) / (data[0].points.length - 1);
+    var increment_x = (opts.width - (opts.gutter_x * 2)) / (labels.length - 1);
     var increment_y = (opts.height - (opts.gutter_y * 2)) / opts.max_y_value;
     if(opts.labels_x.draw) {
       $.each(labels, function(i, label) {

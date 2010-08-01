@@ -6,7 +6,7 @@ $(function() {
     grid: {
       draw_x: true,
       draw_y: true,
-      gap_y: 5,
+      gap_y: 20,
       color: "#ccc"
     },
     path: {
@@ -29,9 +29,6 @@ $(function() {
   graphite.addLabels(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul'])
   graphite.addPath('test path', [19, 20, 50, 22.5, 42.1, 43.6, 12], {color: '#004156'});
   graphite.addPath('test path 2', [86, 51, 24, 51, 1, 27, 54]);
-
-  var overlays = {};
-
   $('<div />').addClass('avgLine').appendTo($("#graph"));
 
   graphite.trigger.mouseoverGraph = function(i) {
