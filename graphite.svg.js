@@ -10,7 +10,7 @@ function Graphite() {
       draw_x: true,
       draw_y: true,
       color: "#ccc",
-      increment_y: 0
+      gap_y: 0
     },
     point: {
       radius: 4
@@ -90,13 +90,10 @@ function Graphite() {
         if(v.element) {
           v.element.remove();
         }
-        if(v.amount > opts.max_y_value) {
-          opts.max_y_value = v.amount;
-        }
       });
       v.element = graphite.drawPath(v);
-      graphite.grid = graphite.drawGrid();
     });
+    this.grid = this.drawGrid();
   }
 
   this.addPath = function(name, values, newOpts) {
@@ -116,7 +113,11 @@ function Graphite() {
         attr: $.extend({}, opts.point)
       };
       if(v > opts.max_y_value) {
-        opts.max_y_value = v;
+        if(opts.grid.gap_y != 0) {
+          opts.max_y_value = v + opts.grid.gap_y - (v % opts.grid.gap_y);
+        } else {
+          opts.max_y_value = v;
+        }
       }
       newPath.points.push($.extend({}, pointObj));
     });
@@ -166,7 +167,7 @@ function Graphite() {
   }
 
   this.getYOffset = function(value) {
-    return opts.height - Math.floor(value * this.scale_y) - opts.gutter_y;
+    return opts.height - value * this.scale_y - opts.gutter_y;
   }
 
   this.labels = function() {
@@ -194,37 +195,41 @@ function Graphite() {
     if(this.grid) {
       this.grid.remove();
     }
-    var x_count = labels.length - 1;
-    var y_count = opts.max_y_value;
-    var increment_x = 0;
-    var increment_y = 0;
+
+    var inner_width = opts.width - opts.gutter_x * 2;
+    var inner_height = opts.height - opts.gutter_y * 2;
+    var gap_x, gap_y, count_x, count_y = 0;
     var grid_path = "M" + opts.gutter_x + ".5," + opts.gutter_y;
 
     if(opts.grid.draw_x) {
-      increment_x = (opts.width - (opts.gutter_x * 2)) / x_count;
+      count_x = labels.length - 1;
+      gap_x = inner_width / count_x;
     }
     if(opts.grid.draw_y) {
-      if(opts.grid.increment_y) {
-        increment_y = (opts.height - opts.gutter_y * 2) / (opts.max_y_value / opts.grid.increment_y);
+      if(opts.grid.gap_y != 0) {
+        gap_y = inner_height / (opts.max_y_value / opts.grid.gap_y);
       } else {
-        increment_y = this.scale_y;
+        gap_y = this.scale_y;
       }
+      count_y = inner_height / gap_y;
     }
 
-    var inner_width = opts.width - opts.gutter_x;
-    var inner_height = opts.height - opts.gutter_y;
-
-    for (var q = 0; q <= x_count; q++) {
+    var grid_width = opts.width - opts.gutter_x;
+    var grid_height = opts.height - opts.gutter_y;
+    for (var q = 0; q < count_x; q++) {
+      var x = Math.round(q * gap_x + opts.gutter_x) + .5;
       if (q) {
-        grid_path += "M" + (q * increment_x + opts.gutter_x + .5) + "," + opts.gutter_y;
+        grid_path += "M" + x + "," + opts.gutter_y;
       }
-      grid_path += "L" + (q * increment_x + opts.gutter_x + .5) + "," + (opts.height - opts.gutter_y);
+      grid_path += "L" + x + "," + (opts.height - opts.gutter_y);
     }
-    for (var q = 0; q < y_count; q++) {
-      grid_path += "M" + opts.gutter_x + "," + (q * increment_y + opts.gutter_y + .5) + "L" +
-                   inner_width + "," + (q * increment_y + opts.gutter_y + .5);
+    for (var q = 0; q < count_y; q++) {
+      var y = Math.round(q * gap_y + opts.gutter_y) + .5
+      grid_path += "M" + opts.gutter_x + "," + y + "L" +
+                   grid_width + "," + y;
     }
-
+    grid_path += "M" + (grid_width - .5) + "," + opts.gutter_y + "L" + (grid_width - .5) + "," +
+                     (grid_height - .5) + "L" + opts.gutter_x + "," + (grid_height - .5);
     return graph.path(grid_path).attr({fill: "none", "stroke-width": 1, stroke: opts.grid.color}).toBack();
 
   }
@@ -235,14 +240,15 @@ function Graphite() {
     var n = points.length;
     for (var i = 0; i < n; i++) {
       var point = points[i];
-      point.y = opts.height - (point.amount * graphite.scale_y) + (opts.path.stroke_width / 2) - opts.gutter_y;
+      y = opts.height - (point.amount * graphite.scale_y) + (opts.path.stroke_width / 2) - opts.gutter_y;
       if (i) {
         x += graphite.scale_x;
-        coordinates += "S" + [x - opts.path.bezier_curve, (y = point.y), x, y];
+        coordinates += "S" + [x - opts.path.bezier_curve, y, x, y];
       } else {
-        coordinates += "M" + [x, (y = point.y)];
+        coordinates += "M" + [x, y];
       }
       point.x = x;
+      point.y = y;
       var point = fireTrigger('beforePoint', point);
       point.element = this.svgPoint(point);
     }

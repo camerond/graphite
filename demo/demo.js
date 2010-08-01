@@ -6,7 +6,7 @@ $(function() {
     grid: {
       draw_x: true,
       draw_y: true,
-      increment_y: 5,
+      gap_y: 5,
       color: "#ccc"
     },
     path: {
@@ -54,7 +54,6 @@ $(function() {
   }
 
   graphite.trigger.mouseoverPath = function(path) {
-    graphite.addPath('test path 3', [4, 4, 6, 181, 31, 43, 66]);
   }
 
   graphite.trigger.mouseoverPoint = function(point) {
