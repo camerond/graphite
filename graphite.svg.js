@@ -1,7 +1,6 @@
 function Graphite() {
   var graphite = this;
   var defaults = {
-    draw_legends: true,
     max_y_value: 0,
     gutter_x: 20,
     gutter_y: 20,
@@ -66,7 +65,7 @@ function Graphite() {
   }
 
   function initGraph($obj) {
-    var graph = Raphael("graph", $obj.width(), $obj.height());
+    var graph = Raphael($obj.attr('id'), $obj.width(), $obj.height());
     opts.width = graph.canvas.clientWidth;
     opts.height = graph.canvas.clientHeight;
 
@@ -265,13 +264,13 @@ function Graphite() {
       }
       point.x = x;
       point.y = y;
-      var point = fireTrigger('beforePoint', point);
       point.element = this.svgPoint(point);
     }
     return coordinates;
   }
 
   this.svgPoint = function(point) {
+    var point = fireTrigger('beforePoint', point);
     var x = point.x;
     var y = point.y;
     var circle = graph.circle(x, y, point.attr.radius)
