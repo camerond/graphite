@@ -156,9 +156,27 @@ function Graphite() {
     this.refresh();
   }
 
-  this.addLabels = function(l) {
+  this.setLabels = function(l) {
     labels = l;
     this.scale_x = (opts.width / (labels.length - 1)) - (opts.gutter_x * 2) / (labels.length - 1);
+    var increment_x = (opts.width - (opts.gutter_x * 2)) / (labels.length - 1);
+    var increment_y = (opts.height - (opts.gutter_y * 2)) / opts.max_y_value;
+    if(opts.labels_x.draw) {
+      $.each(labels, function(i, label) {
+        var x = i * increment_x + opts.gutter_x + opts.labels_x.adj_x;
+        var y = opts.height - opts.gutter_y / 2 + opts.labels_x.adj_y;
+        graph.text(x, y, label).attr({
+          "text-anchor": opts.labels_x.text_anchor, 
+          font: opts.labels_x.font, 
+          fill: opts.labels_x.color
+        });
+      });
+    }
+    if(opts.labels_y.draw) {
+      for (var i = 0; i <= opts.max_y_value; i++) {
+        graph.text(opts.gutter_x, opts.height - (i * increment_y + opts.gutter_y), i).attr({"text-anchor": "end"});
+      }
+    }
   }
 
   this.drawPath = function(p) {
@@ -183,27 +201,6 @@ function Graphite() {
 
   this.getYOffset = function(value) {
     return opts.height - value * this.scale_y - opts.gutter_y;
-  }
-
-  this.labels = function() {
-    var increment_x = (opts.width - (opts.gutter_x * 2)) / (labels.length - 1);
-    var increment_y = (opts.height - (opts.gutter_y * 2)) / opts.max_y_value;
-    if(opts.labels_x.draw) {
-      $.each(labels, function(i, label) {
-        var x = i * increment_x + opts.gutter_x + opts.labels_x.adj_x;
-        var y = opts.height - opts.gutter_y / 2 + opts.labels_x.adj_y;
-        graph.text(x, y, label).attr({
-          "text-anchor": opts.labels_x.text_anchor, 
-          font: opts.labels_x.font, 
-          fill: opts.labels_x.color
-        });
-      });
-    }
-    if(opts.labels_y.draw) {
-      for (var i = 0; i <= opts.max_y_value; i++) {
-        graph.text(opts.gutter_x, opts.height - (i * increment_y + opts.gutter_y), i).attr({"text-anchor": "end"});
-      }
-    }
   }
 
   this.drawGrid = function() {
