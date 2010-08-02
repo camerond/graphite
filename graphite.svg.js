@@ -46,6 +46,8 @@ function Graphite() {
   this.trigger = {
     beforePoint : {},
     beforePath : {},
+    afterPoint : {},
+    afterPath : {},
     mouseoverPoint : {},
     mouseoutPoint : {},
     mouseoverPath : {},
@@ -196,6 +198,8 @@ function Graphite() {
     c.mouseout(function(event) {
       fireTrigger('mouseoutPath', path);
     });
+    path.element = c;
+    fireTrigger('afterPath', path);
     return c;
   }
 
@@ -262,6 +266,7 @@ function Graphite() {
       point.x = x;
       point.y = y;
       point.element = this.svgPoint(point);
+      point = fireTrigger('afterPoint', point);
     }
     return coordinates;
   }
