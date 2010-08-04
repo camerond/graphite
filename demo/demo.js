@@ -1,11 +1,9 @@
 $(function() {
   var graphite = new Graphite($("#graph"), {
     bezier_curve: 0,
-    gutter_x: 4,
+    gutter_x: 5,
     max_y_value: 100,
     grid: {
-      draw_x: true,
-      draw_y: true,
       gap_y: 20,
       color: "#ccc"
     },
@@ -42,7 +40,7 @@ $(function() {
 
   graphite.trigger.beforePoint = function(i) {
     if((i.index == 0) || (i.index == i.parent.points.length-1)) {
-      i.attr.radius = 0;
+      i.attr.radius = 2;
     }
     return i;
   }
@@ -68,9 +66,19 @@ $(function() {
     return point;
   }
 
+  function testPath() {
+    var testPoints = []
+    for(var i=0; i<7; i++) {
+      testPoints.push((Math.round(Math.random()*1000)) / 10);
+    }
+    return testPoints;
+  }
   graphite.setLabels(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul'])
-  graphite.addPath('test path', [19, 20, 50, 22.5, 42.1, 43.6, 12], {color: '#004156'});
-  graphite.addPath('test path 2', [86, 51, 24, 51, 1, 27, 54]);
+  graphite.addPath('test path 1', testPath(), {color: '#004156'});
+  graphite.addPath('test path 2', testPath(), {color: '#ff5200'});
+  graphite.removePath('test path 2');
+  graphite.addPath('test path 3', testPath(), {color: '#ff0000'});
+  graphite.addPath('test path 4', testPath(), {color: '#00ff55'});
 
 });
 

@@ -6,6 +6,7 @@ function Graphite() {
     gutter_y: 20,
     tooltip_class: 'tooltip',
     grid: {
+      draw_border: true,
       draw_x: true,
       draw_y: true,
       color: "#ccc",
@@ -94,7 +95,7 @@ function Graphite() {
       });
       v.element = graphite.drawPath(v);
     });
-    this.grid = this.drawGrid();
+    this.gridpaths = this.drawGrid();
   }
 
   this.setYScale = function(v) {
@@ -208,45 +209,49 @@ function Graphite() {
   }
 
   this.drawGrid = function() {
-    if(this.grid) {
-      this.grid.remove();
+    if(this.gridpaths) {
+      $.each(this.gridpaths, function(k, v) {
+        v.remove();
+      });
     }
 
-    var inner_width = opts.width - opts.gutter_x * 2;
-    var inner_height = opts.height - opts.gutter_y * 2;
     var gap_x, gap_y, count_x, count_y = 0;
-    var grid_path = "M" + opts.gutter_x + ".5," + opts.gutter_y;
+    var gx = opts.gutter_x;
+    var gy = opts.gutter_y;
+    var grid_width = opts.width - gx*2;
+    var grid_height = opts.height - gy*2;
+    var gridlines = [];
 
     if(opts.grid.draw_x) {
       count_x = labels.length - 1;
-      gap_x = inner_width / count_x;
+      gap_x = (opts.width - gx * 2) / count_x;
+
+      for (var q = 1; q < count_x; q++) {
+        var x = Math.round(q * gap_x + gx) + .5;
+        gridlines.push("M" + x + "," + gy + "l0," + grid_height);
+      }
     }
     if(opts.grid.draw_y) {
       if(opts.grid.gap_y != 0) {
-        gap_y = inner_height / (opts.max_y_value / opts.grid.gap_y);
+        gap_y = (opts.height - gy * 2) / (opts.max_y_value / opts.grid.gap_y);
       } else {
         gap_y = this.scale_y;
       }
-      count_y = inner_height / gap_y;
+      count_y = (opts.height - gy * 2) / gap_y;
+      for (var q = 1; q < count_y; q++) {
+        var y = Math.round(q * gap_y + gy) + .5;
+        gridlines.push("M" + gx + "," + y + "l" + grid_width + ",0");
+      }
+    }
+    if(opts.grid.draw_border) {
+      gridlines.push("M" + (gx+.5) + "," + (gy+.5) + "l" + grid_width + ",0l0" + "," + grid_height + "l-" + grid_width + ",0 z")
     }
 
-    var grid_width = opts.width - opts.gutter_x;
-    var grid_height = opts.height - opts.gutter_y;
-    for (var q = 0; q < count_x; q++) {
-      var x = Math.round(q * gap_x + opts.gutter_x) + .5;
-      if (q) {
-        grid_path += "M" + x + "," + opts.gutter_y;
-      }
-      grid_path += "L" + x + "," + (opts.height - opts.gutter_y);
-    }
-    for (var q = 0; q < count_y; q++) {
-      var y = Math.round(q * gap_y + opts.gutter_y) + .5
-      grid_path += "M" + opts.gutter_x + "," + y + "L" +
-                   grid_width + "," + y;
-    }
-    grid_path += "M" + (grid_width - .5) + "," + opts.gutter_y + "L" + (grid_width - .5) + "," +
-                     (grid_height - .5) + "L" + opts.gutter_x + "," + (grid_height - .5);
-    return graph.path(grid_path).attr({fill: "none", "stroke-width": 1, stroke: opts.grid.color}).toBack();
+    var gridpaths = [];
+    $.each(gridlines, function(k, v) {
+      gridpaths.push(graph.path(v).attr({fill: "none", "stroke-width": 1, stroke: opts.grid.color}).toBack());
+    });
+    return gridpaths;
 
   }
 
