@@ -263,7 +263,7 @@ function Graphite() {
       } else {
         coordinates += "M" + [x, y];
       }
-      point.x = x;
+      point.x = Math.round(x);
       point.y = y;
       point.element = this.svgPoint(point);
       point = fireTrigger('afterPoint', point);
@@ -273,9 +273,7 @@ function Graphite() {
 
   this.svgPoint = function(point) {
     var point = fireTrigger('beforePoint', point);
-    var x = point.x;
-    var y = point.y;
-    var circle = graph.circle(x, y, point.attr.radius)
+    var circle = graph.circle(point.x, point.y, point.attr.radius)
                   .attr({fill: point.parent.attr.color, stroke: "none"});
     circle.mouseover(function(event) {
       fireTrigger('mouseoverPoint', point);
