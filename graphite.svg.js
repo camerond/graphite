@@ -112,6 +112,7 @@ function Graphite() {
       this.setYScale(opts.max_y_value);
     }
     var pathObj = {
+      name: name,
       points: [],
       attr: $.extend({}, opts.path)
     };
