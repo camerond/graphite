@@ -77,7 +77,7 @@ $(function() {
   graphite.addPath('test path 1', testPath(), {color: '#004156'});
   graphite.addPath('test path 2', testPath(), {color: '#ff5200'});
   graphite.removePath('test path 2');
-  graphite.addPath('test path 3',['',14,15,'',23], {color: '#ff0000'});
+  graphite.addPath('test path 3',['',14,15,null,23], {color: '#ff0000'});
   graphite.addPath('test path 4', testPath(), {color: '#00ff55'});
 
 });

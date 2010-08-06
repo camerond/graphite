@@ -120,7 +120,7 @@ function Graphite() {
     var newPath = $.extend({}, pathObj);
     newPath.attr = $.extend(newPath.attr, newOpts);
     $.each(values, function(k, v) {
-      if ((v !== false) && (v !== '')) {
+      if (v && (v !== '')) {
         var pointObj = {
           index: k,
           parent: newPath,
