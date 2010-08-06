@@ -39,7 +39,7 @@ $(function() {
   }
 
   graphite.trigger.beforePoint = function(i) {
-    if((i.index == 0) || (i.index == i.parent.points.length-1)) {
+    if((i.index == 0) || (i.index == graphite.labels.length-1)) {
       i.attr.radius = 2;
     }
     return i;
@@ -68,16 +68,16 @@ $(function() {
 
   function testPath() {
     var testPoints = []
-    for(var i=0; i<7; i++) {
+    for(var i=0; i<5; i++) {
       testPoints.push((Math.round(Math.random()*1000)) / 10);
     }
     return testPoints;
   }
-  graphite.setLabels(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul'])
+  graphite.setLabels(['jan', 'feb', 'mar', 'apr', 'may'])
   graphite.addPath('test path 1', testPath(), {color: '#004156'});
   graphite.addPath('test path 2', testPath(), {color: '#ff5200'});
   graphite.removePath('test path 2');
-  graphite.addPath('test path 3', testPath(), {color: '#ff0000'});
+  graphite.addPath('test path 3',['',14,15,'',23], {color: '#ff0000'});
   graphite.addPath('test path 4', testPath(), {color: '#00ff55'});
 
 });

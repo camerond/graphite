@@ -41,7 +41,8 @@ function Graphite() {
   }
 
   var graph = initGraph(arguments[0]);
-  var labels = [];
+
+  this.labels = [];
   var data = {};
 
   this.trigger = {
@@ -119,16 +120,18 @@ function Graphite() {
     var newPath = $.extend({}, pathObj);
     newPath.attr = $.extend(newPath.attr, newOpts);
     $.each(values, function(k, v) {
-      var pointObj = {
-        index: k,
-        parent: newPath,
-        amount: v,
-        attr: $.extend({}, opts.point)
-      };
-      if(v > opts.max_y_value) {
-        graphite.setYScale(v);
+      if ((v !== false) && (v !== '')) {
+        var pointObj = {
+          index: k,
+          parent: newPath,
+          amount: v,
+          attr: $.extend({}, opts.point)
+        };
+        if(v > opts.max_y_value) {
+          graphite.setYScale(v);
+        }
+        newPath.points.push($.extend({}, pointObj));
       }
-      newPath.points.push($.extend({}, pointObj));
     });
 
     data[name] = newPath;
@@ -161,12 +164,12 @@ function Graphite() {
   }
 
   this.setLabels = function(l) {
-    labels = l;
-    this.scale_x = (opts.width / (labels.length - 1)) - (opts.gutter_x * 2) / (labels.length - 1);
-    var increment_x = (opts.width - (opts.gutter_x * 2)) / (labels.length - 1);
+    this.labels = l;
+    this.scale_x = (opts.width / (l.length - 1)) - (opts.gutter_x * 2) / (l.length - 1);
+    var increment_x = (opts.width - (opts.gutter_x * 2)) / (l.length - 1);
     var increment_y = (opts.height - (opts.gutter_y * 2)) / opts.max_y_value;
     if(opts.labels_x.draw) {
-      $.each(labels, function(i, label) {
+      $.each(l, function(i, label) {
         var x = i * increment_x + opts.gutter_x + opts.labels_x.adj_x;
         var y = opts.height - opts.gutter_y / 2 + opts.labels_x.adj_y;
         graph.text(x, y, label).attr({
@@ -224,7 +227,7 @@ function Graphite() {
     var gridlines = [];
 
     if(opts.grid.draw_x) {
-      count_x = labels.length - 1;
+      count_x = this.labels.length - 1;
       gap_x = (opts.width - gx * 2) / count_x;
 
       for (var q = 1; q < count_x; q++) {
@@ -258,13 +261,13 @@ function Graphite() {
 
   this.svgPath = function(points) {
     var coordinates = "";
-    var x = opts.gutter_x || 0, y = 0;
+    var x = 0, y = 0;
     var n = points.length;
     for (var i = 0; i < n; i++) {
       var point = points[i];
       y = opts.height - (point.amount * graphite.scale_y) + (opts.path.stroke_width / 2) - opts.gutter_y;
+      x = opts.gutter_x + graphite.scale_x * point.index;
       if (i) {
-        x += graphite.scale_x;
         coordinates += "S" + [x - opts.path.bezier_curve, y, x, y];
       } else {
         coordinates += "M" + [x, y];
