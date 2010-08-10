@@ -1,4 +1,4 @@
-function Graphite() {
+function Graphite($div, opts) {
   var graphite = this;
   var defaults = {
     max_y_value: 0,
@@ -38,9 +38,9 @@ function Graphite() {
   var opts = $.extend(true, defaults, user_opts || {});
   this.attr = function(opt) {
     return opts[opt];
-  }
+  };
 
-  var graph = initGraph(arguments[0]);
+  var graph = initGraph($div);
 
   this.labels = [];
   var data = {};
@@ -68,17 +68,17 @@ function Graphite() {
     return obj;
   }
 
-  function initGraph($obj) {
-    var graph = Raphael($obj.attr('id'), $obj.width(), $obj.height());
-    opts.width = graph.canvas.clientWidth;
-    opts.height = graph.canvas.clientHeight;
+  function initGraph($div) {
+    var graph = Raphael($div.attr('id'), $div.width(), $div.height());
+    opts.w = $div.width();
+    opts.h = $div.height();
 
-    $("<div />").addClass(opts.tooltip_class).appendTo($obj);
+    $("<div />").addClass(opts.tooltip_class).appendTo($div);
 
-    $obj.mouseenter(function(event) {
+    $div.mouseenter(function(event) {
       fireTrigger('mouseoverGraph', graph);
     });
-    $obj.mouseleave(function(event) {
+    $div.mouseleave(function(event) {
       fireTrigger('mouseoutGraph', graph);
     });
     return graph;
@@ -97,7 +97,7 @@ function Graphite() {
       v.element = graphite.drawPath(v);
     });
     this.gridpaths = this.drawGrid();
-  }
+  };
 
   this.setYScale = function(v) {
     if(opts.grid.gap_y != 0) {
@@ -105,8 +105,8 @@ function Graphite() {
     } else {
       opts.max_y_value = v;
     }
-    graphite.scale_y = (opts.height - opts.gutter_y * 2) / opts.max_y_value;
-  }
+    graphite.scale_y = (opts.h - opts.gutter_y * 2) / opts.max_y_value;
+  };
 
   this.addPath = function(name, values, newOpts) {
     if($.isEmptyObject(data)) {
@@ -140,7 +140,7 @@ function Graphite() {
 
     return newPath;
 
-  }
+  };
 
   this.removePath = function(pathName) {
     var path = data[pathName];
@@ -161,17 +161,17 @@ function Graphite() {
       graphite.setYScale(newMax);
     };
     this.refresh();
-  }
+  };
 
   this.setLabels = function(l) {
     this.labels = l;
-    this.scale_x = (opts.width / (l.length - 1)) - (opts.gutter_x * 2) / (l.length - 1);
-    var increment_x = (opts.width - (opts.gutter_x * 2)) / (l.length - 1);
-    var increment_y = (opts.height - (opts.gutter_y * 2)) / opts.max_y_value;
+    this.scale_x = (opts.w / (l.length - 1)) - (opts.gutter_x * 2) / (l.length - 1);
+    var increment_x = (opts.w - (opts.gutter_x * 2)) / (l.length - 1);
+    var increment_y = (opts.h - (opts.gutter_y * 2)) / opts.max_y_value;
     if(opts.labels_x.draw) {
       $.each(l, function(i, label) {
         var x = i * increment_x + opts.gutter_x + opts.labels_x.adj_x;
-        var y = opts.height - opts.gutter_y / 2 + opts.labels_x.adj_y;
+        var y = opts.h - opts.gutter_y / 2 + opts.labels_x.adj_y;
         graph.text(x, y, label).attr({
           "text-anchor": opts.labels_x.text_anchor, 
           font: opts.labels_x.font, 
@@ -181,10 +181,10 @@ function Graphite() {
     }
     if(opts.labels_y.draw) {
       for (var i = 0; i <= opts.max_y_value; i++) {
-        graph.text(opts.gutter_x, opts.height - (i * increment_y + opts.gutter_y), i).attr({"text-anchor": "end"});
+        graph.text(opts.gutter_x, opts.h - (i * increment_y + opts.gutter_y), i).attr({"text-anchor": "end"});
       }
     }
-  }
+  };
 
   this.drawPath = function(p) {
     var path = fireTrigger('beforePath', p);
@@ -193,8 +193,8 @@ function Graphite() {
     c.attr({path: coordinates});
     if(opts.path.fill_opacity > 0) {
       var bg = graph.path("M0,0").attr({stroke: "none", opacity: path.attr.fill_opacity});
-      var bg_values = values + "L" + (opts.width - opts.gutter_x) + "," + (opts.height - opts.gutter_y) +
-                      " " + opts.gutter_x + "," + (opts.height - opts.gutter_y) + "z";
+      var bg_values = values + "L" + (opts.w - opts.gutter_x) + "," + (opts.h - opts.gutter_y) +
+                      " " + opts.gutter_x + "," + (opts.h - opts.gutter_y) + "z";
       bg.attr({path: bg_values, fill: opts.path.color});
     }
     c.mouseover(function(event) {
@@ -206,11 +206,11 @@ function Graphite() {
     path.element = c;
     fireTrigger('afterPath', path);
     return c;
-  }
+  };
 
   this.getYOffset = function(value) {
-    return opts.height - value * this.scale_y - opts.gutter_y;
-  }
+    return opts.h - value * this.scale_y - opts.gutter_y;
+  };
 
   this.drawGrid = function() {
     if(this.gridpaths) {
@@ -222,13 +222,13 @@ function Graphite() {
     var gap_x, gap_y, count_x, count_y = 0;
     var gx = opts.gutter_x;
     var gy = opts.gutter_y;
-    var grid_width = opts.width - gx*2;
-    var grid_height = opts.height - gy*2;
+    var grid_width = opts.w - gx*2;
+    var grid_height = opts.h - gy*2;
     var gridlines = [];
 
     if(opts.grid.draw_x) {
       count_x = this.labels.length - 1;
-      gap_x = (opts.width - gx * 2) / count_x;
+      gap_x = (opts.w - gx * 2) / count_x;
 
       for (var q = 1; q < count_x; q++) {
         var x = Math.round(q * gap_x + gx) + .5;
@@ -237,11 +237,11 @@ function Graphite() {
     }
     if(opts.grid.draw_y) {
       if(opts.grid.gap_y != 0) {
-        gap_y = (opts.height - gy * 2) / (opts.max_y_value / opts.grid.gap_y);
+        gap_y = (opts.h - gy * 2) / (opts.max_y_value / opts.grid.gap_y);
       } else {
         gap_y = this.scale_y;
       }
-      count_y = (opts.height - gy * 2) / gap_y;
+      count_y = (opts.h - gy * 2) / gap_y;
       for (var q = 1; q < count_y; q++) {
         var y = Math.round(q * gap_y + gy) + .5;
         gridlines.push("M" + gx + "," + y + "l" + grid_width + ",0");
@@ -257,7 +257,7 @@ function Graphite() {
     });
     return gridpaths;
 
-  }
+  };
 
   this.svgPath = function(points) {
     var coordinates = "";
@@ -265,7 +265,7 @@ function Graphite() {
     var n = points.length;
     for (var i = 0; i < n; i++) {
       var point = points[i];
-      y = opts.height - (point.amount * graphite.scale_y) + (opts.path.stroke_width / 2) - opts.gutter_y;
+      y = opts.h - (point.amount * graphite.scale_y) + (opts.path.stroke_width / 2) - opts.gutter_y;
       x = opts.gutter_x + graphite.scale_x * point.index;
       if (i) {
         coordinates += "S" + [x - opts.path.bezier_curve, y, x, y];
@@ -278,7 +278,7 @@ function Graphite() {
       point = fireTrigger('afterPoint', point);
     }
     return coordinates;
-  }
+  };
 
   this.svgPoint = function(point) {
     var point = fireTrigger('beforePoint', point);
@@ -291,5 +291,5 @@ function Graphite() {
       fireTrigger('mouseoutPoint', point);
     });
     return circle;
-  }
+  };
 }
