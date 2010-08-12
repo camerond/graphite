@@ -32,6 +32,7 @@ function Graphite($div, opts) {
     labels_y: {
       draw: true,
       font: "normal 10px Helvetica, Arial, sans-serif",
+      color: "#333333",
       count: 0,
       increment: 0,
       adj_x: 0,
@@ -195,11 +196,17 @@ function Graphite($div, opts) {
     }
     if(opts.labels_y.draw) {
       var increment_y = (opts.h - (opts.gutter_y * 2)) / opts.max_y_value;
+      var x = opts.gutter_x + opts.labels_y.adj_x;
       if(opts.labels_y.count > 0) {
         var step = ((opts.h - (opts.gutter_y * 2)) / (opts.labels_y.count-1)) / increment_y;
         for (var i = 0; i < opts.h; i+= step) {
           var amount = Math.round(i);
-          var t = graph.text(opts.gutter_x, opts.h - (i * increment_y) - opts.gutter_y, amount+'').attr({"text-anchor": "end"});
+          var y = opts.h - (i * increment_y) - opts.gutter_y + opts.labels_y.adj_y;
+          var t = graph.text(x, y, amount+'').attr({
+            "text-anchor": "end", 
+            font: opts.labels_y.font,
+            fill: opts.labels_x.color
+          });
           graphite.labels.push(t);
         }
       } else {
@@ -208,7 +215,12 @@ function Graphite($div, opts) {
           step = opts.labels_y.increment;
         }
         for (var i = 0; i <= opts.max_y_value; i+=step) {
-          var t = graph.text(opts.gutter_x, opts.h - (i * increment_y) - opts.gutter_y, i+'').attr({"text-anchor": "end"});
+          var y = opts.h - (i * increment_y) - opts.gutter_y + opts.labels_y.adj_y;
+          var t = graph.text(x, y, i+'').attr({
+            "text-anchor": "end", 
+            font: opts.labels_y.font,
+            fill: opts.labels_x.color
+          });
           graphite.labels.push(t);
         }
       }

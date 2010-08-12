@@ -14,7 +14,9 @@ $(function() {
     },
     labels_y: {
       draw: true,
-      count: 2
+      count: 2,
+      adj_x: -5,
+      font: "bold 11px arial"
     },
     labels_x: {
       text_anchor: "middle",
