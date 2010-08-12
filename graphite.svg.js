@@ -190,8 +190,8 @@ function Graphite($div, opts) {
         var x = i * increment_x + opts.gutter_x + opts.labels_x.adj_x;
         var y = opts.h - opts.gutter_y / 2 + opts.labels_x.adj_y;
         var t = graph.text(x, y, label).attr({
-          "text-anchor": opts.labels_x.text_anchor, 
-          font: opts.labels_x.font, 
+          "text-anchor": opts.labels_x.text_anchor,
+          font: opts.labels_x.font,
           fill: opts.labels_x.color
         });
         graphite.labels.push(t);
@@ -206,7 +206,7 @@ function Graphite($div, opts) {
           var amount = Math.round(i);
           var y = opts.h - (i * increment_y) - opts.gutter_y + opts.labels_y.adj_y;
           var t = graph.text(x, y, amount+'').attr({
-            "text-anchor": "end", 
+            "text-anchor": "end",
             font: opts.labels_y.font,
             fill: opts.labels_x.color
           });
@@ -220,7 +220,7 @@ function Graphite($div, opts) {
         for (var i = 0; i <= opts.max_y_value; i+=step) {
           var y = opts.h - (i * increment_y) - opts.gutter_y + opts.labels_y.adj_y;
           var t = graph.text(x, y, i+'').attr({
-            "text-anchor": "end", 
+            "text-anchor": "end",
             font: opts.labels_y.font,
             fill: opts.labels_x.color
           });
