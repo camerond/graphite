@@ -145,6 +145,9 @@ function Graphite($div, opts) {
   this.removePath = function(pathName) {
     var path = data[pathName];
     path.element.remove();
+    if(path.fill_element) {
+      path.fill_element.remove();
+    }
     $.each(path.points, function(point) {
       this.element.remove();
     });
@@ -193,9 +196,9 @@ function Graphite($div, opts) {
     c.attr({path: coordinates});
     if(opts.path.fill_opacity > 0) {
       var bg = graph.path("M0,0").attr({stroke: "none", opacity: path.attr.fill_opacity});
-      var bg_values = values + "L" + (opts.w - opts.gutter_x) + "," + (opts.h - opts.gutter_y) +
+      var bg_values = coordinates + "L" + (opts.w - opts.gutter_x) + "," + (opts.h - opts.gutter_y) +
                       " " + opts.gutter_x + "," + (opts.h - opts.gutter_y) + "z";
-      bg.attr({path: bg_values, fill: opts.path.color});
+      bg.attr({path: bg_values, fill: path.attr.color});
     }
     c.mouseover(function(event) {
       fireTrigger('mouseoverPath', path);
@@ -204,6 +207,7 @@ function Graphite($div, opts) {
       fireTrigger('mouseoutPath', path);
     });
     path.element = c;
+    path.fill_element = bg;
     fireTrigger('afterPath', path);
     return c;
   };
