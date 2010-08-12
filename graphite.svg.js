@@ -94,6 +94,9 @@ function Graphite($div, opts) {
       if(v.element) {
         v.element.remove();
       }
+      if(v.fill_element) {
+        v.fill_element.remove();
+      }
       $.each(v.points, function(k, v) {
         if(v.element) {
           v.element.remove();
