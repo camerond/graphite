@@ -75,10 +75,10 @@ function Graphite($div, opts) {
 
     $("<div />").addClass(opts.tooltip_class).appendTo($div);
 
-    $div.mouseenter(function(event) {
+    $div.mouseenter(function() {
       fireTrigger('mouseoverGraph', graph);
     });
-    $div.mouseleave(function(event) {
+    $div.mouseleave(function() {
       fireTrigger('mouseoutGraph', graph);
     });
     return graph;
@@ -200,10 +200,10 @@ function Graphite($div, opts) {
                       " " + opts.gutter_x + "," + (opts.h - opts.gutter_y) + "z";
       bg.attr({path: bg_values, fill: path.attr.color});
     }
-    c.mouseover(function(event) {
+    c.mouseover(function() {
       fireTrigger('mouseoverPath', path);
     });
-    c.mouseout(function(event) {
+    c.mouseout(function() {
       fireTrigger('mouseoutPath', path);
     });
     path.element = c;
@@ -288,10 +288,10 @@ function Graphite($div, opts) {
     var point = fireTrigger('beforePoint', point);
     var circle = graph.circle(point.x, point.y, point.attr.radius)
                   .attr({fill: point.parent.attr.color, stroke: "none"});
-    circle.mouseover(function(event) {
+    circle.mouseover(function() {
       fireTrigger('mouseoverPoint', point);
     });
-    circle.mouseout(function(event) {
+    circle.mouseout(function() {
       fireTrigger('mouseoutPoint', point);
     });
     return circle;
