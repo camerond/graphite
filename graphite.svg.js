@@ -31,7 +31,11 @@ function Graphite($div, opts) {
     },
     labels_y: {
       draw: true,
-      font: "normal 10px Helvetica, Arial, sans-serif"
+      font: "normal 10px Helvetica, Arial, sans-serif",
+      count: 0,
+      increment: 0,
+      adj_x: 0,
+      adj_y: 0
     }
   }
   var user_opts = arguments[1];
@@ -97,6 +101,10 @@ function Graphite($div, opts) {
       v.element = graphite.drawPath(v);
     });
     this.gridpaths = this.drawGrid();
+    $.each(this.labels, function(i) {
+      graphite.labels.pop().remove();
+    });
+    this.setLabels();
   };
 
   this.setYScale = function(v) {
@@ -166,25 +174,43 @@ function Graphite($div, opts) {
     this.refresh();
   };
 
-  this.setLabels = function(l) {
-    this.labels = l;
+  this.setLabels = function() {
+    if (arguments[0]) {
+      this.labels_x = arguments[0];
+    }
+    var l = this.labels_x;
     this.scale_x = (opts.w / (l.length - 1)) - (opts.gutter_x * 2) / (l.length - 1);
     var increment_x = (opts.w - (opts.gutter_x * 2)) / (l.length - 1);
-    var increment_y = (opts.h - (opts.gutter_y * 2)) / opts.max_y_value;
     if(opts.labels_x.draw) {
       $.each(l, function(i, label) {
         var x = i * increment_x + opts.gutter_x + opts.labels_x.adj_x;
         var y = opts.h - opts.gutter_y / 2 + opts.labels_x.adj_y;
-        graph.text(x, y, label).attr({
+        var t = graph.text(x, y, label).attr({
           "text-anchor": opts.labels_x.text_anchor, 
           font: opts.labels_x.font, 
           fill: opts.labels_x.color
         });
+        graphite.labels.push(t);
       });
     }
     if(opts.labels_y.draw) {
-      for (var i = 0; i <= opts.max_y_value; i++) {
-        graph.text(opts.gutter_x, opts.h - (i * increment_y + opts.gutter_y), i).attr({"text-anchor": "end"});
+      var increment_y = (opts.h - (opts.gutter_y * 2)) / opts.max_y_value;
+      if(opts.labels_y.count > 0) {
+        var step = ((opts.h - (opts.gutter_y * 2)) / (opts.labels_y.count-1)) / increment_y;
+        for (var i = 0; i < opts.h; i+= step) {
+          var amount = Math.round(i);
+          var t = graph.text(opts.gutter_x, opts.h - (i * increment_y) - opts.gutter_y, amount+'').attr({"text-anchor": "end"});
+          graphite.labels.push(t);
+        }
+      } else {
+        var step = opts.grid.gap_y;
+        if(opts.labels_y.increment) {
+          step = opts.labels_y.increment;
+        }
+        for (var i = 0; i <= opts.max_y_value; i+=step) {
+          var t = graph.text(opts.gutter_x, opts.h - (i * increment_y) - opts.gutter_y, i+'').attr({"text-anchor": "end"});
+          graphite.labels.push(t);
+        }
       }
     }
   };
@@ -231,7 +257,7 @@ function Graphite($div, opts) {
     var gridlines = [];
 
     if(opts.grid.draw_x) {
-      count_x = this.labels.length - 1;
+      count_x = this.labels_x.length - 1;
       gap_x = (opts.w - gx * 2) / count_x;
 
       for (var q = 1; q < count_x; q++) {

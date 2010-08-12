@@ -1,7 +1,7 @@
 $(function() {
   var graphite = new Graphite($("#graph"), {
     bezier_curve: 0,
-    gutter_x: 5,
+    gutter_x: 20,
     max_y_value: 100,
     grid: {
       gap_y: 20,
@@ -13,12 +13,13 @@ $(function() {
       fill_opacity: 0
     },
     labels_y: {
-      draw: false
+      draw: true,
+      count: 2
     },
     labels_x: {
-      text_anchor: "end",
-      adj_x: -5,
-      adj_y: -20,
+      text_anchor: "middle",
+      adj_x: 0,
+      adj_y: 5,
       font: "bold 11px arial",
       color: "#333"
     }
