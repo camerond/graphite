@@ -47,7 +47,8 @@ function Graphite($div, opts) {
 
   var graph = initGraph($div);
 
-  this.labels = [];
+  this.labels_x = [];
+  this.labels_y = [];
   var data = {};
 
   this.trigger = {
@@ -105,8 +106,8 @@ function Graphite($div, opts) {
       v.element = graphite.drawPath(v);
     });
     this.gridpaths = this.drawGrid();
-    $.each(this.labels, function(i) {
-      graphite.labels.pop().remove();
+    $.each(this.labels_y, function(i) {
+      graphite.labels_y.pop().remove();
     });
     this.setLabels();
   };
@@ -147,9 +148,7 @@ function Graphite($div, opts) {
     });
 
     data[name] = newPath;
-
     this.refresh();
-
     return newPath;
 
   };
@@ -181,11 +180,9 @@ function Graphite($div, opts) {
   this.setLabels = function() {
     if (arguments[0]) {
       this.labels_x = arguments[0];
-    }
-    var l = this.labels_x;
-    this.scale_x = (opts.w / (l.length - 1)) - (opts.gutter_x * 2) / (l.length - 1);
-    var increment_x = (opts.w - (opts.gutter_x * 2)) / (l.length - 1);
-    if(opts.labels_x.draw) {
+      var l = this.labels_x;
+      this.scale_x = (opts.w / (l.length - 1)) - (opts.gutter_x * 2) / (l.length - 1);
+      var increment_x = (opts.w - (opts.gutter_x * 2)) / (l.length - 1);
       $.each(l, function(i, label) {
         var x = i * increment_x + opts.gutter_x + opts.labels_x.adj_x;
         var y = opts.h - opts.gutter_y / 2 + opts.labels_x.adj_y;
@@ -194,7 +191,7 @@ function Graphite($div, opts) {
           font: opts.labels_x.font,
           fill: opts.labels_x.color
         });
-        graphite.labels.push(t);
+        graphite.labels_x.push(t);
       });
     }
     if(opts.labels_y.draw) {
@@ -210,7 +207,7 @@ function Graphite($div, opts) {
             font: opts.labels_y.font,
             fill: opts.labels_x.color
           });
-          graphite.labels.push(t);
+          graphite.labels_y.push(t);
         }
       } else {
         var step = opts.grid.gap_y;
@@ -224,7 +221,7 @@ function Graphite($div, opts) {
             font: opts.labels_y.font,
             fill: opts.labels_x.color
           });
-          graphite.labels.push(t);
+          graphite.labels_y.push(t);
         }
       }
     }

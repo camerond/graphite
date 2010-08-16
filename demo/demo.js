@@ -42,7 +42,7 @@ $(function() {
   }
 
   graphite.trigger.beforePoint = function(i) {
-    if((i.index == 0) || (i.index == graphite.labels.length-1)) {
+    if((i.index == 0) || (i.index == graphite.labels_x.length-1)) {
       i.attr.radius = 2;
     }
     return i;
