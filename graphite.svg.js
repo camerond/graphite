@@ -259,7 +259,7 @@ function Graphite($div, user_opts) {
   };
 
   this.getYOffset = function(value) {
-    return opts.h - value * this.scale_y - opts.gutter.top;
+    return opts.h - value * this.scale_y - opts.gutter.bottom;
   };
 
   this.drawGrid = function() {
