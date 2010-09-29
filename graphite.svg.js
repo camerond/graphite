@@ -117,7 +117,8 @@ function Graphite($div, user_opts) {
 
   this.setYScale = function(v) {
     if(opts.grid.gap_y != 0) {
-      opts.max_y_value = v + opts.grid.gap_y - (v % opts.grid.gap_y);
+      var g = opts.grid.gap_y;
+      opts.max_y_value = g * (Math.ceil(v / g));
     } else {
       opts.max_y_value = v;
     }

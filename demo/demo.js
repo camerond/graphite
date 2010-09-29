@@ -3,7 +3,7 @@ $(function() {
     bezier_curve: 0,
     max_y_value: 100,
     grid: {
-      gap_y: 0,
+      gap_y: 20,
       color: "#ccc"
     },
     gutter: {
@@ -77,7 +77,7 @@ $(function() {
   function testPath() {
     var testPoints = []
     for(var i=0; i<5; i++) {
-      testPoints.push((Math.round(Math.random()*1000)) / 10);
+      testPoints.push((Math.round(Math.random()*1300)) / 10);
     }
     return testPoints;
   }
