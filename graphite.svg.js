@@ -2,9 +2,13 @@ function Graphite($div, user_opts) {
   var graphite = this;
   var defaults = {
     max_y_value: 0,
-    gutter_x: 20,
-    gutter_y: 20,
     tooltip_class: 'tooltip',
+    gutter: {
+      top: 20,
+      right: 20,
+      bottom: 20,
+      left: 20
+    },
     grid: {
       draw_border: true,
       draw_x: true,
@@ -36,7 +40,7 @@ function Graphite($div, user_opts) {
       count: 0,
       increment: 0,
       adj_x: 0,
-      adj_y: 0
+      adj_y: 10
     }
   };
   var opts = $.extend(true, defaults, user_opts || {});
@@ -117,7 +121,7 @@ function Graphite($div, user_opts) {
     } else {
       opts.max_y_value = v;
     }
-    graphite.scale_y = (opts.h - opts.gutter_y * 2) / opts.max_y_value;
+    graphite.scale_y = (opts.h - opts.gutter.top - opts.gutter.bottom) / opts.max_y_value;
   };
 
   this.addPath = function(name, values, newOpts) {
@@ -180,11 +184,12 @@ function Graphite($div, user_opts) {
     if (arguments[0]) {
       this.labels_x = arguments[0];
       var l = this.labels_x;
-      this.scale_x = (opts.w / (l.length - 1)) - (opts.gutter_x * 2) / (l.length - 1);
-      var increment_x = (opts.w - (opts.gutter_x * 2)) / (l.length - 1);
+      var gutter_x = opts.gutter.left + opts.gutter.right;
+      this.scale_x = (opts.w / (l.length - 1)) - gutter_x / (l.length - 1);
+      var increment_x = (opts.w - gutter_x) / (l.length - 1);
       $.each(l, function(i, label) {
-        var x = i * increment_x + opts.gutter_x + opts.labels_x.adj_x;
-        var y = opts.h - opts.gutter_y / 2 + opts.labels_x.adj_y;
+        var x = i * increment_x + opts.gutter.left + opts.labels_x.adj_x;
+        var y = opts.h - opts.gutter.bottom + opts.labels_x.adj_y;
         var t = graph.text(x, y, label).attr({
           "text-anchor": opts.labels_x.text_anchor,
           font: opts.labels_x.font,
@@ -194,15 +199,16 @@ function Graphite($div, user_opts) {
       });
     }
     if(opts.labels_y.draw) {
-      var increment_y = (opts.h - (opts.gutter_y * 2)) / opts.max_y_value;
-      var x = opts.gutter_x + opts.labels_y.adj_x;
+      var gutter_y = opts.gutter.top + opts.gutter.bottom;
+      var increment_y = (opts.h - gutter_y) / opts.max_y_value;
+      var x = opts.gutter.left + opts.labels_y.adj_x;
       var step, y, text;
       var i = 0;
       if(opts.labels_y.count > 0) {
-        step = ((opts.h - (opts.gutter_y * 2)) / (opts.labels_y.count-1)) / increment_y;
-        for (i = 0; i < opts.h; i+= step) {
+        step = ((opts.h - gutter_y) / (opts.labels_y.count-1)) / increment_y;
+        for (i = 0; i < opts.max_y_value; i+= step) {
           var amount = Math.round(i);
-          y = opts.h - (i * increment_y) - opts.gutter_y + opts.labels_y.adj_y;
+          y = opts.h - (i * increment_y) - opts.gutter.bottom - 10 + opts.labels_y.adj_y;
           text = graph.text(x, y, amount+'').attr({
             "text-anchor": "end",
             font: opts.labels_y.font,
@@ -216,7 +222,7 @@ function Graphite($div, user_opts) {
           step = opts.labels_y.increment;
         }
         for (i = 0; i <= opts.max_y_value; i+=step) {
-          y = opts.h - (i * increment_y) - opts.gutter_y + opts.labels_y.adj_y;
+          y = opts.h - (i * increment_y) - opts.gutter.bottom - 10 + opts.labels_y.adj_y;
           text = graph.text(x, y, i+'').attr({
             "text-anchor": "end",
             font: opts.labels_y.font,
@@ -235,8 +241,8 @@ function Graphite($div, user_opts) {
     c.attr({path: coordinates});
     if(opts.path.fill_opacity > 0) {
       var bg = graph.path("M0,0").attr({stroke: "none", opacity: path.attr.fill_opacity});
-      var bg_values = coordinates + "L" + (opts.w - opts.gutter_x) + "," + (opts.h - opts.gutter_y) +
-                      " " + opts.gutter_x + "," + (opts.h - opts.gutter_y) + "z";
+      var bg_values = coordinates + "L" + (opts.w - opts.gutter.left) + "," + (opts.h - opts.gutter.top) +
+                      " " + opts.gutter.left + "," + (opts.h - opts.gutter.top) + "z";
       bg.attr({path: bg_values, fill: path.attr.color});
     }
     c.mouseover(function() {
@@ -252,7 +258,7 @@ function Graphite($div, user_opts) {
   };
 
   this.getYOffset = function(value) {
-    return opts.h - value * this.scale_y - opts.gutter_y;
+    return opts.h - value * this.scale_y - opts.gutter.top;
   };
 
   this.drawGrid = function() {
@@ -263,16 +269,16 @@ function Graphite($div, user_opts) {
     }
 
     var gap_x, gap_y, count_x, count_y = 0;
-    var gx = opts.gutter_x;
-    var gy = opts.gutter_y;
-    var grid_width = opts.w - gx*2;
-    var grid_height = opts.h - gy*2;
+    var gx = opts.gutter.left;
+    var gy = opts.gutter.top;
+    var grid_width = opts.w - opts.gutter.left - opts.gutter.right;
+    var grid_height = opts.h - opts.gutter.top - opts.gutter.bottom;
     var gridlines = [];
     var q;
 
     if(opts.grid.draw_x) {
       count_x = this.labels_x.length - 1;
-      gap_x = (opts.w - gx * 2) / count_x;
+      gap_x = grid_width / count_x;
 
       for (q = 1; q < count_x; q++) {
         var x = Math.round(q * gap_x + gx) + 0.5;
@@ -281,11 +287,11 @@ function Graphite($div, user_opts) {
     }
     if(opts.grid.draw_y) {
       if(opts.grid.gap_y != 0) {
-        gap_y = (opts.h - gy * 2) / (opts.max_y_value / opts.grid.gap_y);
+        gap_y = grid_height / (opts.max_y_value / opts.grid.gap_y);
       } else {
         gap_y = this.scale_y;
       }
-      count_y = (opts.h - gy * 2) / gap_y;
+      count_y = grid_height / gap_y;
       for (q = 1; q < count_y; q++) {
         var y = Math.round(q * gap_y + gy) + 0.5;
         gridlines.push("M" + gx + "," + y + "l" + grid_width + ",0");
@@ -309,8 +315,8 @@ function Graphite($div, user_opts) {
     var n = points.length;
     for (var i = 0; i < n; i++) {
       var point = points[i];
-      y = opts.h - (point.amount * graphite.scale_y) + (opts.path.stroke_width / 2) - opts.gutter_y;
-      x = opts.gutter_x + graphite.scale_x * point.index;
+      y = opts.h - (point.amount * graphite.scale_y) + (opts.path.stroke_width / 2) - opts.gutter.bottom;
+      x = opts.gutter.left + graphite.scale_x * point.index;
       if (i) {
         coordinates += "S" + [x - opts.path.bezier_curve, y, x, y];
       } else {

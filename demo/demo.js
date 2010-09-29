@@ -1,11 +1,16 @@
 $(function() {
   var graphite = new Graphite($("#graph"), {
     bezier_curve: 0,
-    gutter_x: 20,
     max_y_value: 100,
     grid: {
-      gap_y: 20,
+      gap_y: 0,
       color: "#ccc"
+    },
+    gutter: {
+      top: 20,
+      right: 20,
+      bottom: 20,
+      left: 20
     },
     path: {
       bezier_curve: 0,
@@ -14,14 +19,14 @@ $(function() {
     },
     labels_y: {
       draw: true,
-      count: 2,
+      increment: 20,
       adj_x: -5,
       font: "bold 11px arial"
     },
     labels_x: {
       text_anchor: "middle",
       adj_x: 0,
-      adj_y: 5,
+      adj_y: 10,
       font: "bold 11px arial",
       color: "#333"
     }
