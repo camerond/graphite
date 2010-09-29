@@ -1,4 +1,4 @@
-function Graphite($div, opts) {
+function Graphite($div, user_opts) {
   var graphite = this;
   var defaults = {
     max_y_value: 0,
@@ -19,7 +19,7 @@ function Graphite($div, opts) {
       color: Raphael.getColor(),
       bezier_curve: 10,
       stroke_width: 4,
-      fill_opacity: .3
+      fill_opacity: 0.3
     },
     labels_x: {
       draw: true,
@@ -38,8 +38,7 @@ function Graphite($div, opts) {
       adj_x: 0,
       adj_y: 0
     }
-  }
-  var user_opts = arguments[1];
+  };
   var opts = $.extend(true, defaults, user_opts || {});
   this.attr = function(opt) {
     return opts[opt];
@@ -197,31 +196,33 @@ function Graphite($div, opts) {
     if(opts.labels_y.draw) {
       var increment_y = (opts.h - (opts.gutter_y * 2)) / opts.max_y_value;
       var x = opts.gutter_x + opts.labels_y.adj_x;
+      var step, y, text;
+      var i = 0;
       if(opts.labels_y.count > 0) {
-        var step = ((opts.h - (opts.gutter_y * 2)) / (opts.labels_y.count-1)) / increment_y;
-        for (var i = 0; i < opts.h; i+= step) {
+        step = ((opts.h - (opts.gutter_y * 2)) / (opts.labels_y.count-1)) / increment_y;
+        for (i = 0; i < opts.h; i+= step) {
           var amount = Math.round(i);
-          var y = opts.h - (i * increment_y) - opts.gutter_y + opts.labels_y.adj_y;
-          var t = graph.text(x, y, amount+'').attr({
+          y = opts.h - (i * increment_y) - opts.gutter_y + opts.labels_y.adj_y;
+          text = graph.text(x, y, amount+'').attr({
             "text-anchor": "end",
             font: opts.labels_y.font,
             fill: opts.labels_x.color
           });
-          graphite.labels_y.push(t);
+          graphite.labels_y.push(text);
         }
       } else {
-        var step = opts.grid.gap_y;
+        step = opts.grid.gap_y;
         if(opts.labels_y.increment) {
           step = opts.labels_y.increment;
         }
-        for (var i = 0; i <= opts.max_y_value; i+=step) {
-          var y = opts.h - (i * increment_y) - opts.gutter_y + opts.labels_y.adj_y;
-          var t = graph.text(x, y, i+'').attr({
+        for (i = 0; i <= opts.max_y_value; i+=step) {
+          y = opts.h - (i * increment_y) - opts.gutter_y + opts.labels_y.adj_y;
+          text = graph.text(x, y, i+'').attr({
             "text-anchor": "end",
             font: opts.labels_y.font,
             fill: opts.labels_x.color
           });
-          graphite.labels_y.push(t);
+          graphite.labels_y.push(text);
         }
       }
     }
@@ -267,13 +268,14 @@ function Graphite($div, opts) {
     var grid_width = opts.w - gx*2;
     var grid_height = opts.h - gy*2;
     var gridlines = [];
+    var q;
 
     if(opts.grid.draw_x) {
       count_x = this.labels_x.length - 1;
       gap_x = (opts.w - gx * 2) / count_x;
 
-      for (var q = 1; q < count_x; q++) {
-        var x = Math.round(q * gap_x + gx) + .5;
+      for (q = 1; q < count_x; q++) {
+        var x = Math.round(q * gap_x + gx) + 0.5;
         gridlines.push("M" + x + "," + gy + "l0," + grid_height);
       }
     }
@@ -284,13 +286,13 @@ function Graphite($div, opts) {
         gap_y = this.scale_y;
       }
       count_y = (opts.h - gy * 2) / gap_y;
-      for (var q = 1; q < count_y; q++) {
-        var y = Math.round(q * gap_y + gy) + .5;
+      for (q = 1; q < count_y; q++) {
+        var y = Math.round(q * gap_y + gy) + 0.5;
         gridlines.push("M" + gx + "," + y + "l" + grid_width + ",0");
       }
     }
     if(opts.grid.draw_border) {
-      gridlines.push("M" + (gx+.5) + "," + (gy+.5) + "l" + grid_width + ",0l0" + "," + grid_height + "l-" + grid_width + ",0 z")
+      gridlines.push("M" + (gx+0.5) + "," + (gy+0.5) + "l" + grid_width + ",0l0" + "," + grid_height + "l-" + grid_width + ",0 z");
     }
 
     var gridpaths = [];
@@ -323,14 +325,14 @@ function Graphite($div, opts) {
   };
 
   this.svgPoint = function(point) {
-    var point = fireTrigger('beforePoint', point);
+    var p = fireTrigger('beforePoint', point);
     var circle = graph.circle(point.x, point.y, point.attr.radius)
                   .attr({fill: point.parent.attr.color, stroke: "none"});
     circle.mouseover(function() {
-      fireTrigger('mouseoverPoint', point);
+      fireTrigger('mouseoverPoint', p);
     });
     circle.mouseout(function() {
-      fireTrigger('mouseoutPoint', point);
+      fireTrigger('mouseoutPoint', p);
     });
     return circle;
   };
