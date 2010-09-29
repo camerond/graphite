@@ -182,29 +182,30 @@ function Graphite($div, user_opts) {
   };
 
   this.setLabels = function() {
+    var x, y, i;
     if (arguments[0]) {
       this.labels_x = arguments[0];
       var l = this.labels_x;
       var gutter_x = opts.gutter.left + opts.gutter.right;
       this.scale_x = (opts.w / (l.length - 1)) - gutter_x / (l.length - 1);
       var increment_x = (opts.w - gutter_x) / (l.length - 1);
-      $.each(l, function(i, label) {
-        var x = i * increment_x + opts.gutter.left + opts.labels_x.adj_x;
-        var y = opts.h - opts.gutter.bottom + opts.labels_x.adj_y;
+      for(i = 0; i < l.length; i++) {
+        x = i * increment_x + opts.gutter.left + opts.labels_x.adj_x;
+        y = opts.h - opts.gutter.bottom + opts.labels_x.adj_y;
+        var label = l.shift();
         var t = graph.text(x, y, label).attr({
           "text-anchor": opts.labels_x.text_anchor,
           font: opts.labels_x.font,
           fill: opts.labels_x.color
         });
         graphite.labels_x.push(t);
-      });
+      }
     }
     if(opts.labels_y.draw) {
       var gutter_y = opts.gutter.top + opts.gutter.bottom;
       var increment_y = (opts.h - gutter_y) / opts.max_y_value;
-      var x = opts.gutter.left + opts.labels_y.adj_x;
-      var step, y, text;
-      var i = 0;
+      x = opts.gutter.left + opts.labels_y.adj_x;
+      var step, text;
       if(opts.labels_y.count > 0) {
         step = ((opts.h - gutter_y) / (opts.labels_y.count-1)) / increment_y;
         for (i = 0; i < opts.max_y_value; i+= step) {
